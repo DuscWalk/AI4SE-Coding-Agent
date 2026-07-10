@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coding Agent Harness</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <h1>Coding Agent Harness</h1>
+    <div class="header-right">
+      <span id="status-indicator" class="status-offline">Disconnected</span>
+    </div>
+  </header>
+
+  <main>
+    <!-- Task Input Panel -->
+    <section class="panel" id="task-panel">
+      <h2>Task</h2>
+      <textarea id="goal-input" placeholder="Enter your coding task, e.g. 'Add a parse_date function to src/utils.py'..." rows="4"></textarea>
+      <div class="task-actions">
+        <button id="run-btn" onclick="submitTask()">Run Task</button>
+        <button id="cancel-btn" class="btn-danger" onclick="cancelTask()" disabled>Cancel</button>
+      </div>
+      <div id="task-status" class="task-status hidden"></div>
+    </section>
+
+    <!-- Live Monitor Panel -->
+    <section class="panel" id="monitor-panel">
+      <h2>Live Monitor</h2>
+      <div id="monitor-header" class="monitor-header hidden">
+        <span id="monitor-goal"></span>
+        <span id="monitor-step-count" class="step-count"></span>
+      </div>
+      <div id="step-log">
+        <div class="empty-state">No active session. Submit a task to begin.</div>
+      </div>
+    </section>
+
+    <!-- Approval Panel -->
+    <section class="panel" id="approval-panel" style="display:none">
+      <h2>Approval Required</h2>
+      <div id="approval-content"></div>
+      <div class="approval-actions">
+        <button class="btn-success" onclick="approve()">Approve</button>
+        <button class="btn-danger" onclick="deny()">Deny</button>
+      </div>
+    </section>
+
+    <!-- Session History Panel -->
+    <section class="panel" id="history-panel">
+      <h2>Sessions</h2>
+      <div id="sessions-list">
+        <div class="empty-state">Loading sessions...</div>
+      </div>
+    </section>
+
+    <!-- Session Detail Panel -->
+    <section class="panel" id="detail-panel" style="display:none">
+      <h2>Session Detail</h2>
+      <button class="btn-back" onclick="closeDetail()">Back to list</button>
+      <div id="detail-content"></div>
+    </section>
+
+    <!-- Configuration Panel -->
+    <section class="panel" id="config-panel">
+      <h2>Configuration</h2>
+      <div id="credential-status" class="credential-status">Loading...</div>
+      <div class="credential-form">
+        <input type="password" id="api-key-input" placeholder="Enter API key" autocomplete="off">
+        <div class="credential-actions">
+          <button onclick="setCredentials()">Set API Key</button>
+          <button class="btn-secondary" onclick="clearCredentials()">Clear</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>
