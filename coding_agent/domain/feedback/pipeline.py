@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from coding_agent.domain.feedback.sensors import Sensor, SyntaxSensor, TypeCheckSensor, LintSensor, TestSensor
 from coding_agent.domain.feedback.classifier import FailureClassifier, ClassifiedResult
 from coding_agent.domain.feedback.engine import CorrectionEngine, CorrectionStrategy
-from coding_agent.domain.models import SensorReport
+from coding_agent.domain.models import SensorReport, SensorFailure, FailureSeverity, FailureCategory
 
 
 @dataclass
@@ -68,7 +68,13 @@ class FeedbackPipeline:
                     reports.append(SensorReport(
                         sensor_name=sensor.name,
                         passed=False,
-                        failures=[],
+                        failures=[SensorFailure(
+                            file_path="",
+                            severity=FailureSeverity.ERROR,
+                            category=FailureCategory.UNKNOWN,
+                            message=f"Sensor '{sensor.name}' execution failed",
+                            raw_output="",
+                        )],
                         duration_ms=0,
                     ))
 

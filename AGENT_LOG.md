@@ -447,7 +447,7 @@
 
 | 指标 | 数值 |
 |------|------|
-| 总 commit 数 | 35 |
+| 总 commit 数 | 41 |
 | 总 task 数 | 26（按 PLAN.md） |
 | 使用的 subagent 数 | ~20（Sonnet general-purpose） |
 | 总测试数 | 109 |

@@ -185,6 +185,7 @@ Infrastructure (LLMProvider / CredentialStore / VectorStore / FileSystem / Subpr
 
 ```
 .
+├── .github/workflows/ci.yml          # GitHub Actions CI 配置（unit-test job）
 ├── .gitignore
 ├── .gitlab-ci.yml                  # CI 配置（unit-test job）
 ├── AGENTS.md                       # 补充项目规则

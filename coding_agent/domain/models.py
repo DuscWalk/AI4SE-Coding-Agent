@@ -36,6 +36,7 @@ class MessageRole(str, Enum):
 class Message(BaseModel):
     role: str
     content: str
+    tool_calls: list[Any] | None = None
 
 
 class FailureSeverity(str, Enum):
