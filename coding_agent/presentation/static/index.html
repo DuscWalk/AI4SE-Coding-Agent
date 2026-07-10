@@ -9,6 +9,7 @@
 <body>
 <div id="app">
 
+  <!-- Header -->
   <header>
     <h1>Coding Agent Harness</h1>
     <div class="header-right">
@@ -16,70 +17,82 @@
     </div>
   </header>
 
-  <main>
-    <!-- Task Input Panel -->
-    <section class="panel" id="task-panel">
-      <h2>Task</h2>
-      <textarea id="goal-input" placeholder="Enter your coding task, e.g. 'Add a parse_date function to src/utils.py'..." rows="4"></textarea>
-      <div class="task-actions">
-        <button id="run-btn" onclick="submitTask()">Run Task</button>
-        <button id="cancel-btn" class="btn-danger" onclick="cancelTask()" disabled>Cancel</button>
-      </div>
-      <div id="task-status" class="task-status hidden"></div>
-    </section>
+  <!-- Main Layout -->
+  <div id="layout">
 
-    <!-- Live Monitor Panel -->
-    <section class="panel" id="monitor-panel">
-      <h2>Live Monitor</h2>
-      <div id="monitor-header" class="monitor-header hidden">
-        <span id="monitor-goal"></span>
-        <span id="monitor-step-count" class="step-count"></span>
-      </div>
-      <div id="step-log">
-        <div class="empty-state">No active session. Submit a task to begin.</div>
-      </div>
-    </section>
-
-    <!-- Approval Panel -->
-    <section class="panel" id="approval-panel" style="display:none">
-      <h2>Approval Required</h2>
-      <div id="approval-content"></div>
-      <div class="approval-actions">
-        <button class="btn-success" onclick="approve()">Approve</button>
-        <button class="btn-danger" onclick="deny()">Deny</button>
-      </div>
-    </section>
-
-    <!-- Session History Panel -->
-    <section class="panel" id="history-panel">
-      <h2>Sessions</h2>
-      <div id="sessions-list">
-        <div class="empty-state">Loading sessions...</div>
-      </div>
-    </section>
-
-    <!-- Session Detail Panel -->
-    <section class="panel" id="detail-panel" style="display:none">
-      <h2>Session Detail</h2>
-      <button class="btn-back" onclick="closeDetail()">Back to list</button>
-      <div id="detail-content"></div>
-    </section>
-
-    <!-- Configuration Panel -->
-    <section class="panel" id="config-panel">
-      <h2>Configuration</h2>
-      <div id="credential-status" class="credential-status">Loading...</div>
-      <div class="credential-form">
-        <input type="password" id="api-key-input" placeholder="Enter API key" autocomplete="off">
-        <div class="credential-actions">
-          <button onclick="setCredentials()">Set API Key</button>
-          <button class="btn-secondary" onclick="clearCredentials()">Clear</button>
+    <!-- Sidebar -->
+    <aside id="sidebar">
+      <nav class="sidebar-tabs">
+        <button class="sidebar-tab active" data-panel="sessions">Sessions</button>
+        <button class="sidebar-tab" data-panel="settings">Settings</button>
+      </nav>
+      <div class="sidebar-content">
+        <!-- Sessions Panel -->
+        <div id="sessions-panel">
+          <div class="empty-state" style="text-align:center;padding:var(--space-6);color:var(--meta);font-size:var(--text-sm);">No sessions yet.</div>
+        </div>
+        <!-- Settings Panel -->
+        <div id="settings-panel" class="hidden">
+          <div id="credential-status" class="credential-status not-configured">Checking credentials...</div>
+          <div class="field">
+            <label for="api-key-input">API Key</label>
+            <input type="password" id="api-key-input" placeholder="sk-..." autocomplete="off">
+          </div>
+          <div style="display:flex;gap:var(--space-2);">
+            <button class="btn btn-primary" onclick="setCredentials()">Set Key</button>
+            <button class="btn btn-ghost" onclick="clearCredentials()">Clear</button>
+          </div>
         </div>
       </div>
-    </section>
-  </main>
+    </aside>
+
+    <!-- Main Content -->
+    <main id="main">
+
+      <!-- Task Input (Command Bar) -->
+      <div id="task-bar">
+        <form onsubmit="event.preventDefault(); submitTask();">
+          <input type="text" id="goal-input" placeholder="Enter a coding task, e.g. 'Add a parse_date function to src/utils.py'..." autocomplete="off" disabled>
+          <button class="btn btn-primary" id="run-btn" type="submit" disabled>Run</button>
+          <button class="btn btn-ghost" id="cancel-btn" type="button" onclick="cancelTask()" disabled>Cancel</button>
+        </form>
+      </div>
+
+      <!-- Terminal / Step Log -->
+      <div id="terminal">
+        <div class="empty-state">Submit a task to begin.</div>
+      </div>
+
+      <!-- Approval Bar -->
+      <div id="approval-bar">
+        <span class="approval-label">Approval Required</span>
+        <span class="approval-detail" id="approval-detail"></span>
+        <button class="btn btn-success" onclick="approve()">Approve</button>
+        <button class="btn btn-danger" onclick="deny()">Deny</button>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Session Detail Overlay -->
+  <div id="detail-overlay">
+    <div id="detail-panel">
+      <div class="detail-header">
+        <div>
+          <h3 id="detail-title">Session Detail</h3>
+          <div class="detail-meta" id="detail-meta"></div>
+        </div>
+        <button class="btn btn-ghost" onclick="closeDetail()" style="padding:4px 8px;font-size:var(--text-xs);">Esc</button>
+      </div>
+      <div class="detail-body" id="detail-content"></div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
 
 </div>
+
 <script src="/static/app.js"></script>
 </body>
 </html>
