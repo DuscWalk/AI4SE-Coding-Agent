@@ -109,20 +109,21 @@ README.md
 
 ```
 Phase 1: Foundation
-Task 1 (项目骨架)
-  ├── Task 2 (数据模型) ── 无依赖，可与 Task 1 并行
-  │     ├── Task 3 (配置系统)
-  │     │     └── Task 18 (CLI)
-  │     ├── Task 4 (凭据存储)
-  │     ├── Task 5 (LLM 抽象)
-  │     │     ├── Task 9 (记忆) ── 需要 VectorStore
-  │     │     └── Task 17 (AgentLoop)
-  │     ├── Task 6 (文件系统+子进程)
-  │     │     └── Task 7 (工具系统)
-  │     │           └── Task 17
-  │     └── Task 8 (治理护栏)
-  │           └── Task 17
-  │
+Task 1a (项目骨架)
+  └── Task 1b (安装依赖 + 验证) ── 需要 Task 1a
+        ├── Task 2 (数据模型) ── 需要 Task 1b
+        │     ├── Task 3 (配置系统)
+        │     │     └── Task 21 (CLI)
+        │     ├── Task 4 (凭据存储)
+        │     ├── Task 5 (LLM 抽象)
+        │     │     ├── Task 9 (记忆) ── 需要 VectorStore；含 chromadb 安装
+        │     │     └── Task 17 (AgentLoop)
+        │     ├── Task 6 (文件系统+子进程)
+        │     │     └── Task 7 (工具系统)
+        │     │           └── Task 17
+        │     └── Task 8 (治理护栏)
+        │           └── Task 17
+        │
 Phase 2: Feedback (主贡献)
 Task 10 (Sensor ABC + SyntaxSensor)
 Task 11 (TypeCheck + Lint + Test sensors)
@@ -154,22 +155,27 @@ Task 26 (README)
 - Task 3, 4, 5, 6, 8 在 Task 2 完成后可并行
 - Task 10, 11, 12, 13 在各自依赖满足后可并行
 - Task 22, 23, 24 在 Task 17 完成后可并行
+- Task 25, 26 在 Task 21 完成后可并行
 
 ---
 
 ## Phase 1: Foundation
 
-### Task 1: 项目骨架与依赖
+### Task 1a: 项目骨架（pyproject.toml + 目录结构）
 
 **Files:**
 - Create: `pyproject.toml`
 
-- [ ] **Step 1: 创建 pyproject.toml**
+**平台注意**：以下命令均给出 PowerShell 版本。如果在 Linux/macOS 上运行，`mkdir -p` 可用，`New-Item` 需替换。
+
+- [ ] **Step 1: 创建 pyproject.toml（不含 chromadb）**
+
+> 注意：chromadb 推迟到 Task 9 安装，避免 Windows 上 C++ 构建工具问题阻塞初始骨架搭建。
 
 ```toml
 [build-system]
 requires = ["setuptools>=68.0"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "coding-agent-harness"
@@ -182,7 +188,6 @@ dependencies = [
     "pydantic>=2.5.0",
     "openai>=1.10.0",
     "keyring>=24.0.0",
-    "chromadb>=0.4.22",
     "pyyaml>=6.0",
     "httpx>=0.26.0",
 ]
@@ -196,31 +201,130 @@ dev = [
 ]
 ```
 
-- [ ] **Step 2: 安装依赖**
+- [ ] **Step 2: 验证 pyproject.toml 已创建**
 
-```bash
-pip install -e ".[dev]"
+```powershell
+Get-Content -Encoding UTF8 -LiteralPath pyproject.toml
 ```
 
-Expected: 所有依赖安装成功
+Expected: 显示上述 TOML 内容，确认 `chromadb` 不在依赖列表中。
 
 - [ ] **Step 3: 创建包目录结构**
 
-```bash
-mkdir -p coding_agent/infrastructure coding_agent/domain/tools coding_agent/domain/feedback coding_agent/application coding_agent/presentation/static
-mkdir -p tests/infrastructure tests/domain/test_tools tests/domain/test_feedback tests/application tests/presentation tests/demonstrations
+```powershell
+New-Item -ItemType Directory -Force -Path coding_agent/infrastructure
+New-Item -ItemType Directory -Force -Path coding_agent/domain/tools
+New-Item -ItemType Directory -Force -Path coding_agent/domain/feedback
+New-Item -ItemType Directory -Force -Path coding_agent/application
+New-Item -ItemType Directory -Force -Path coding_agent/presentation/static
+New-Item -ItemType Directory -Force -Path tests/infrastructure
+New-Item -ItemType Directory -Force -Path tests/domain/test_tools
+New-Item -ItemType Directory -Force -Path tests/domain/test_feedback
+New-Item -ItemType Directory -Force -Path tests/application
+New-Item -ItemType Directory -Force -Path tests/presentation
+New-Item -ItemType Directory -Force -Path tests/demonstrations
 ```
 
-- [ ] **Step 4: 创建所有 __init__.py**
+- [ ] **Step 4: 验证目录结构**
 
-每个目录下创建空的 `__init__.py`
+```powershell
+Get-ChildItem -Recurse -Directory coding_agent/ | Select-Object FullName
+Get-ChildItem -Recurse -Directory tests/ | Select-Object FullName
+```
 
-- [ ] **Step 5: Commit**
+Expected: 所有目录存在，无遗漏。
 
-```bash
+- [ ] **Step 5: 创建所有 __init__.py**
+
+每个目录下创建空的 `__init__.py`（共 15 个文件）：
+
+```powershell
+$dirs = @(
+    "coding_agent",
+    "coding_agent/infrastructure",
+    "coding_agent/domain",
+    "coding_agent/domain/tools",
+    "coding_agent/domain/feedback",
+    "coding_agent/application",
+    "coding_agent/presentation",
+    "coding_agent/presentation/static",
+    "tests",
+    "tests/infrastructure",
+    "tests/domain",
+    "tests/domain/test_tools",
+    "tests/domain/test_feedback",
+    "tests/application",
+    "tests/presentation",
+    "tests/demonstrations"
+)
+foreach ($d in $dirs) {
+    $path = "$d/__init__.py"
+    if (-not (Test-Path $path)) {
+        New-Item -ItemType File -Path $path -Force
+    }
+}
+```
+
+- [ ] **Step 6: 验证 __init__.py 文件**
+
+```powershell
+Get-ChildItem -Recurse -Filter "__init__.py" coding_agent/ | Select-Object FullName
+Get-ChildItem -Recurse -Filter "__init__.py" tests/ | Select-Object FullName
+```
+
+Expected: 16 个 `__init__.py` 文件。
+
+- [ ] **Step 7: Commit**
+
+```powershell
 git add pyproject.toml coding_agent/ tests/
-git commit -m "feat: initialize project skeleton with dependencies"
+git commit -m "feat: initialize project skeleton with directory structure"
 ```
+
+---
+
+### Task 1b: 安装依赖并验证
+
+**Depends on:** Task 1a
+
+**注意**：如果 pip install 失败（尤其是 chromadb 需要 Visual C++ 构建工具），先不带 chromadb 安装，chromadb 在 Task 9 单独处理。
+
+- [ ] **Step 1: 安装核心依赖（不含 chromadb）**
+
+```powershell
+pip install -e ".[dev]"
+```
+
+Expected: 核心依赖安装成功。如果 chromadb 构建失败，运行：
+
+```powershell
+pip install -e ".[dev]" --no-deps
+pip install fastapi uvicorn pydantic openai keyring pyyaml httpx pytest pytest-asyncio ruff mypy
+```
+
+- [ ] **Step 2: 验证 pytest 可用**
+
+```powershell
+pytest --version
+```
+
+Expected: 显示 pytest 8.x 版本号。
+
+- [ ] **Step 3: 验证包可导入**
+
+```powershell
+python -c "import coding_agent; print('OK')"
+```
+
+Expected: 输出 `OK`，无 ImportError。
+
+- [ ] **Step 4: Commit（如有变更）**
+
+```powershell
+git status
+```
+
+如果 pip install 生成了 `*.egg-info` 等文件，确认 `.gitignore` 已排除它们。不提交安装产物。
 
 ---
 
