@@ -1,0 +1,329 @@
+# AGENT_LOG.md · Agent 协作日志
+
+> 记录 Coding Agent Harness 项目从 brainstorming 到最终交付的完整 agent 协作过程。
+> 每条记录包含：时间戳、任务编号、Superpowers 技能、关键 prompt/context 配置、subagent 输出、人工干预、学到的教训。
+
+---
+
+## Phase 0: 规约与计划（2026-07-10）
+
+### 记录 0.1 · brainstorming 启动
+
+- **时间**：2026-07-10 09:30
+- **技能**：`brainstorming`
+- **模型**：主对话使用 Opus
+- **关键决策**：
+  1. 主贡献维度：反馈闭环（从 6 个维度中选择）
+  2. 技术栈：Python 3.11+ / FastAPI / Pydantic / ChromaDB
+  3. LLM 抽象：ScriptedMockLLM + RuleBasedMockLLM 两种 mock
+  4. 反馈深度：4 层管线（语法→类型检查→lint→测试）
+  5. 工具系统：10 个内置工具
+  6. 记忆：ChromaDB 向量检索 + InMemoryVectorStore 降级
+  7. 治理：三级权限（SAFE/RISKY/DANGEROUS）+ 硬拦截模式
+  8. WebUI：完整工作区（任务+轨迹+审批）
+  9. 架构：4 层分层（表示/应用/领域/基础设施）
+- **人工干预**：无，所有决策均由用户选择确认
+- **产出**：SPEC.md 所有章节内容，commit `6b5aa2a`
+
+### 记录 0.2 · writing-plans 生成 PLAN.md
+
+- **时间**：2026-07-10 10:30
+- **技能**：`writing-plans`
+- **模型**：主对话使用 Opus
+- **关键 prompt**：根据 SPEC.md 生成 26 个 task 的实现计划，每个 task 2-5 分钟粒度，TDD 纪律，含验证步骤
+- **人工干预**：用户选择 subagent-driven 执行模式
+- **产出**：PLAN.md 初始版本，commit `01d7e81`
+
+### 记录 0.3 · 冷启动验证
+
+- **时间**：2026-07-10 10:45
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent（与主对话 Opus 不同，无对话上下文）
+- **输入**：仅 SPEC.md + PLAN.md 两个文件路径
+- **任务**：Task 1（项目骨架）+ Task 2（数据模型）
+- **产出**：
+  - `pyproject.toml` + 目录结构，commit `a561118`
+  - 15 个 Pydantic 模型 + 8 个测试，commit `93aa595`
+  - 8 tests passed
+- **发现的问题**：
+  1. `build-backend = "setuptools.backends._legacy:_Backend"` 是无效值，agent 自行修正为 `setuptools.build_meta`
+  2. `mkdir -p` 在 PowerShell 中不可用，agent 自行处理
+  3. Task 1 粒度过大（5 步跨度过大）
+- **人工干预**：基于验证结果修订 PLAN.md（Task 1 拆分为 1a+1b、修正 build-backend、添加 PowerShell 语法、增加验证步骤），commit `311e01a`
+- **教训**：冷启动验证是本次项目最有价值的工程实践。陌生 agent 发现了一个人类 review 容易忽略的事实性错误（无效的 build-backend 值），并验证了 plan 的可执行性
+
+---
+
+## Phase 1: 基础设施层（2026-07-10）
+
+### 记录 1.1 · Task 3: 配置系统
+
+- **时间**：2026-07-10 10:56
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 Config 系统，支持 YAML + CLAUDE.md + AGENTS.md 加载
+- **产出**：commit `c2cd212`
+- **测试**：`tests/domain/test_config.py`
+- **人工干预**：无
+- **教训**：Pydantic 的 BaseModel 继承让配置模型的默认值和校验非常简洁
+
+### 记录 1.2 · Task 4: 凭据存储
+
+- **时间**：2026-07-10 10:57
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 CredentialStore，基于 keyring 库对接 Windows Credential Manager
+- **产出**：commit `3b4d25d`
+- **测试**：`tests/infrastructure/test_credential_store.py`
+- **人工干预**：无
+- **教训**：keyring 库对 Windows Credential Manager 的支持开箱即用，无需额外配置
+
+### 记录 1.3 · Task 5: LLM 抽象层
+
+- **时间**：2026-07-10 10:57
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 LLMProvider ABC + ScriptedMockLLM + RuleBasedMockLLM
+- **产出**：commit `e63c090`
+- **测试**：`tests/infrastructure/test_llm_provider.py`
+- **人工干预**：无
+- **教训**：两种 mock 模式覆盖了不同的测试场景：ScriptedMock 适合预设对话序列，RuleBasedMock 适合模式匹配
+
+### 记录 1.4 · Task 6: 文件系统与子进程管理
+
+- **时间**：2026-07-10 11:00
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 FileSystemManager（allowed_dirs 沙箱）+ SubprocessManager（timeout）
+- **产出**：commit `6a1848d`
+- **测试**：`tests/infrastructure/test_file_system.py` + `tests/infrastructure/test_subprocess_manager.py`
+- **人工干预**：无
+- **教训**：文件系统沙箱是安全边界的关键组件，allowed_dirs 外的路径写入必须抛出异常
+
+---
+
+## Phase 2: 领域层（2026-07-10）
+
+### 记录 2.1 · Task 7: 工具系统
+
+- **时间**：2026-07-10 11:04
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 ToolManager + 10 个内置工具（read_file, write_file, list_dir, search_files, grep, run_shell, run_test, git_status, git_diff, git_commit）
+- **产出**：commit `d112284`
+- **测试**：`tests/domain/tools/test_*.py`
+- **人工干预**：无
+- **教训**：工具注册表的 Dict 结构在 10 个工具规模下足够简单，不需要插件系统
+
+### 记录 2.2 · Task 8: 治理护栏
+
+- **时间**：2026-07-10 10:59
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 Governance，三级权限（SAFE/RISKY/DANGEROUS）+ 硬拦截模式（BLOCKED_PATTERNS）
+- **产出**：commit `e88292f`
+- **测试**：`tests/domain/test_governance.py`
+- **人工干预**：测试 `test_blocked_command_git_push_force_main` 预期 BLOCKED 但实际应为 NEEDS_HITL，agent 修正了测试
+- **教训**：硬拦截模式（如 `rm -rf /`）是安全底线，不可通过 HITL 绕过
+
+### 记录 2.3 · Task 9: 记忆系统
+
+- **时间**：2026-07-10 11:09
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 InMemoryVectorStore + MemoryManager（scratchpad + 向量检索 + consolidate + compress）
+- **产出**：commit `da5a735`
+- **测试**：`tests/infrastructure/test_vector_store.py` + `tests/domain/test_memory.py`
+- **人工干预**：MemoryManager.read() 只搜索向量存储，遗漏了 scratchpad 中的笔记。agent 添加了 scratchpad 子串匹配
+- **教训**：三层存储（scratchpad → 文件 → 向量）的检索需要覆盖所有层
+
+### 记录 2.4 · Task 10-11: 反馈传感器
+
+- **时间**：2026-07-10 11:07（SyntaxSensor）、11:16（TypeCheck + Lint + Test）
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 Sensor ABC + SyntaxSensor + TypeCheckSensor + LintSensor + TestSensor
+- **产出**：commits `13ddde0` + `98851ce`
+- **测试**：`tests/domain/feedback/test_sensors.py`
+- **人工干预**：无
+- **教训**：传感器按速度排序（语法→类型→lint→测试）实现快速失败，语法错误时无需等待测试结果
+
+### 记录 2.5 · Task 12: 失败分类器
+
+- **时间**：2026-07-10 11:14
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 FailureClassifier，按 category 和 file_path 聚合失败
+- **产出**：commit `1e0c363`
+- **测试**：`tests/domain/feedback/test_classifier.py`
+- **人工干预**：无
+- **教训**：分类器需要同时按类别和文件聚合，以便修正引擎能精确定位问题
+
+### 记录 2.6 · Task 13: 修正策略引擎
+
+- **时间**：2026-07-10 11:08
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 CorrectionEngine，三级策略（RETRY→ROLLBACK→ASK_USER）+ IGNORE 降级
+- **产出**：commit `7a5f63a`
+- **测试**：`tests/domain/feedback/test_engine.py`
+- **人工干预**：无
+- **教训**：渐进式升级策略避免死循环，超过最大重试次数自动升级到 ASK_USER
+
+### 记录 2.7 · Task 14: FeedbackPipeline 整合
+
+- **时间**：2026-07-10 11:21
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 FeedbackPipeline，串联 Sensor → Classifier → Engine 全流程
+- **产出**：commit `4e84d6f`
+- **测试**：`tests/domain/feedback/test_pipeline.py`
+- **人工干预**：无
+- **教训**：Pipeline 是反馈闭环的核心编排器，将传感器、分类器和修正引擎解耦
+
+---
+
+## Phase 3: 应用层（2026-07-10）
+
+### 记录 3.1 · Task 15: ActionParser
+
+- **时间**：2026-07-10 11:24
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 ActionParser，将 LLMResponse 解析为结构化 Action
+- **产出**：commit `91e1f8d`
+- **测试**：`tests/application/test_action_parser.py`
+- **人工干预**：无
+- **教训**：ActionParser 是 LLM 自由文本输出与 harness 结构化动作之间的桥梁
+
+### 记录 3.2 · Task 16: SessionManager
+
+- **时间**：2026-07-10 11:26
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 SessionManager，管理 session 生命周期、步骤记录、JSON 持久化
+- **产出**：commit `ad2eacf`
+- **测试**：`tests/application/test_session_manager.py`
+- **人工干预**：AgentLoop 接口与 PLAN.md 不一致（SessionManager.complete() 签名、SessionManager.record_step() 签名），agent 自行修正
+- **教训**：PLAN.md 中的接口签名需要与实际实现保持同步
+
+### 记录 3.3 · Task 17: AgentLoop 主循环
+
+- **时间**：2026-07-10 11:32
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 AgentLoop 主循环，8 个依赖通过依赖注入传入
+- **产出**：commit `64dd170`
+- **测试**：`tests/application/test_agent_loop.py`
+- **人工干预**：AgentLoop 接口与 Governance(tm)、PermissionResult 比较等不匹配，agent 修正了所有接口
+- **教训**：依赖注入让 AgentLoop 只依赖接口，便于测试时替换组件
+
+---
+
+## Phase 4: 表示层与集成（2026-07-10）
+
+### 记录 4.1 · Task 18: CLI 入口
+
+- **时间**：2026-07-10 11:36
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 CLI 入口（serve, credentials, run 子命令）
+- **产出**：commit `097e3bd`
+- **测试**：`tests/test_main.py`
+- **人工干预**：无
+- **教训**：CLI 是用户与 harness 的第一接触点，需要清晰的子命令结构
+
+### 记录 4.2 · Task 18b: FastAPI 应用
+
+- **时间**：2026-07-10 11:38
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现 FastAPI app + REST routes + WebSocket + credential endpoints
+- **产出**：commit `8d6df5e`
+- **测试**：`tests/presentation/test_app.py`
+- **人工干预**：无
+- **教训**：FastAPI 的依赖注入与分层架构天然契合
+
+### 记录 4.3 · Task 19: WebUI 前端
+
+- **时间**：2026-07-10 11:43
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：实现原生 HTML/CSS/JS 前端（6 个面板：任务输入、实时监控、会话历史、审批、凭据管理、日志）
+- **产出**：commit `2bebca1`
+- **测试**：集成验证（curl 测试所有端点）
+- **人工干预**：无
+- **教训**：原生前端避免了 React 等框架的依赖，但 UI 交互受限于 DOM 操作
+
+### 记录 4.4 · Task 20: WebUI 集成
+
+- **时间**：2026-07-10 11:49
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：将 SessionManager 注入 WebUI routes，添加 /api/run 和 /api/sessions/{id}/approve 端点
+- **产出**：commit `a5dcbc7`
+- **测试**：`tests/presentation/test_app.py` 从 3 个扩展到 11 个
+- **人工干预**：无
+- **教训**：WebUI 集成需要前后端配合，所有端点均通过 curl 集成验证
+
+---
+
+## Phase 5: 机制演示、分发与文档（2026-07-10）
+
+### 记录 5.1 · Task 22-24: 机制演示
+
+- **时间**：2026-07-10 11:36-11:39
+- **技能**：`subagent-driven-development`（并行 dispatch）
+- **模型**：Sonnet general-purpose agent
+- **任务**：
+  - Demo 1：治理护栏拦截危险命令，commit `aee2efc`
+  - Demo 2：反馈闭环注入语法错误后 agent 修正，commit `e782c6f`
+  - Demo 3：完整反馈管线演示，commit `dc69a9f`
+- **测试**：`tests/demonstrations/test_demo_*.py`
+- **人工干预**：无
+- **教训**：三个机制演示均使用 mock LLM 确定性地复现核心行为
+
+### 记录 5.2 · Task 25: Docker + CI
+
+- **时间**：2026-07-10 11:43
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：创建 Dockerfile（Python 3.11-slim）、.gitlab-ci.yml（unit-test job）、conftest.py
+- **产出**：commit `ef4bfec`
+- **测试**：109 tests passed
+- **人工干预**：无
+- **教训**：CI 必须包含 `unit-test` job，这是课程硬性要求
+
+### 记录 5.3 · Task 26: README.md
+
+- **时间**：2026-07-10 11:45
+- **技能**：`subagent-driven-development`
+- **模型**：Sonnet general-purpose agent
+- **任务**：创建完整 README.md（安装、运行、凭据配置、安全边界、目录结构、Docker 分发）
+- **产出**：commit `5256270`
+- **人工干预**：无
+- **教训**：README 是用户的第一印象，必须覆盖从零运行到安全配置的完整流程
+
+---
+
+## 总结统计
+
+| 指标 | 数值 |
+|------|------|
+| 总 commit 数 | 27 |
+| 总 task 数 | 26（按 PLAN.md） |
+| 使用的 subagent 数 | ~20（Sonnet general-purpose） |
+| 总测试数 | 109 |
+| 测试通过率 | 100%（109/109 passed） |
+| 人工干预次数 | 4（build-backend 修正、PLAN.md 修订、governance 测试修正、memory 检索修正） |
+| 核心机制演示 | 3（治理拦截、反馈修正、完整管线） |
+| 代码行数 | ~4,000+（含测试） |
+
+### 关键教训总结
+
+1. **冷启动验证是硬性门禁**：陌生 agent 发现了人类 review 容易忽略的错误（无效 build-backend）
+2. **PLAN.md 接口签名必须与实际一致**：AgentLoop 的多个接口与 PLAN.md 不匹配，agent 自行修正
+3. **平台差异不可忽视**：`mkdir -p` vs `New-Item`、单引号 vs 双引号、subprocess timeout 错误消息
+4. **TDD 纪律确保可测试性**：109 个测试全部使用 mock LLM，无需真实 API key
+5. **subagent-driven 模式有效**：每个 task 由独立 Sonnet agent 执行，减少了上下文污染
+6. **依赖注入是测试的关键**：AgentLoop 的所有依赖通过接口注入，便于 mock 替换
