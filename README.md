@@ -95,6 +95,27 @@ pip install coding-agent-harness
 coding-agent serve --port 8080
 ```
 
+## 部署
+
+项目已部署至阿里云 ECS，可通过以下公网地址访问：
+
+**http://120.26.110.68:8081**
+
+### 部署架构
+
+| 组件 | 说明 |
+|------|------|
+| **服务器** | 阿里云 ECS（Linux x86_64） |
+| **进程管理** | systemd（`/etc/systemd/system/coding-agent.service`） |
+| **Python** | 3.11（venv 虚拟环境） |
+| **路径** | `/opt/coding-agent/` |
+| **凭据后端** | Linux Secret Service（keyrings.alt） |
+| **安全组** | 开放 8081 端口 |
+
+### CI/CD
+
+CI 配置位于 `.gitlab-ci.yml`，包含 `unit-test` job：每次 push 自动运行 `pytest tests/ -v --tb=short`。Docker 镜像构建与部署通过手动触发。
+
 ## 已知限制
 
 | 限制 | 说明 |
@@ -166,9 +187,13 @@ Infrastructure (LLMProvider / CredentialStore / VectorStore / FileSystem / Subpr
 .
 ├── .gitignore
 ├── .gitlab-ci.yml                  # CI 配置（unit-test job）
+├── AGENTS.md                       # 补充项目规则
 ├── CLAUDE.md                       # 项目 agent 操作章程
 ├── Dockerfile                      # Docker 镜像构建文件
+├── Makefile                        # 一键测试与构建命令
 ├── PLAN.md                         # 实现计划
+├── README.md
+├── REFLECTION.md                   # 个人反思报告
 ├── SPEC.md                         # 设计文档
 ├── SPEC_PROCESS.md                 # 规约生成过程记录
 ├── pyproject.toml                  # 项目元数据与依赖
@@ -204,7 +229,8 @@ Infrastructure (LLMProvider / CredentialStore / VectorStore / FileSystem / Subpr
 │   │   ├── __init__.py
 │   │   ├── credential_store.py     # 凭据安全存储（keyring）
 │   │   ├── file_system.py          # 文件系统抽象
-│   │   ├── llm_provider.py         # LLM 抽象（真实 + mock）
+│   │   ├── llm_provider.py         # LLM 抽象接口 + mock 实现
+│   │   ├── real_llm.py             # 真实 LLM（OpenAI 兼容协议）
 │   │   ├── subprocess_manager.py   # 子进程管理
 │   │   └── vector_store.py         # 向量存储（ChromaDB）
 │   └── presentation/               # 表示层
@@ -213,6 +239,7 @@ Infrastructure (LLMProvider / CredentialStore / VectorStore / FileSystem / Subpr
 │       ├── routes.py               # REST API 路由
 │       ├── websocket.py            # WebSocket 实时推送
 │       └── static/                 # 前端静态资源
+│           ├── DESIGN.md           # Open Design 设计系统文档
 │           ├── app.js              # 前端交互逻辑
 │           ├── index.html          # WebUI 页面
 │           └── style.css           # 样式
