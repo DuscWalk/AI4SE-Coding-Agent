@@ -402,7 +402,7 @@ coding-agent serve --port 8080
 | **ruff** | Lint sensor | 极快、Python 原生、替代 flake8 |
 | **mypy** | 类型检查 | Python 静态类型标准工具 |
 | **Docker** | 分发 | 环境一致、一键运行、课程要求 |
-| **原生 HTML/CSS/JS** | 前端 | 无框架依赖、轻量、易于打包 |
+| **原生 HTML/CSS/JS + Open Design** | 前端 | 无框架依赖、轻量、易于打包。遵循 Open Design 规范，设计系统定义在 `DESIGN.md`（含颜色/排版/间距/组件/动效/品牌），使用 `prototype` skill 生成界面 |
 
 ---
 
