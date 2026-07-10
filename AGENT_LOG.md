@@ -373,18 +373,70 @@
 
 ---
 
+## Phase 7: 第二轮审计与修复（2026-07-10）
+
+### 记录 7.1 · 第二次综合审计
+
+- **时间**：2026-07-10 16:00
+- **技能**：直接操作 + 3 个并行 Explore subagent
+- **模型**：主对话 Opus + 3 个 Sonnet Explore agent
+- **任务**：对照课程文档和项目产出做第二轮全面审计
+- **Agent 1**：从课程文档提取 109 条检查项（L01-L07, SEC01-SEC11, DIST01-DIST13, TECH01-03, SIZE01-05, TOOL01-09, SPECPLAN01-03, SPEC01-11, PLAN01-03, SPRO01-04, COLD01-06, IMPL01-07, GIT01-07, TEST01-04, LOG01-07, CLOUD01-04, DEL01-10, REFL01-09, ACAD01-03, HARN01-23）
+- **Agent 2**：文档一致性检查，发现 12 个问题（C1-C2, M1-M5, m1-m6）
+- **Agent 3**：源代码 vs SPEC 验证，发现 10 个偏差（#1-#10）
+- **综合结论**：17 个问题（3 CRITICAL + 7 MAJOR + 7 MINOR）
+- **人工干预**：用户确认修复全部 17 个问题
+
+### 记录 7.2 · 修复 17 个审计问题
+
+- **时间**：2026-07-10 16:30
+- **技能**：直接编辑
+- **模型**：主对话 Opus
+- **任务**：修复全部 17 个审计发现的问题
+- **关键修复**：
+  1. C1: 新增 `real_llm.py`，实现 OpenAI-compatible `RealLLMProvider`
+  2. C2: `agent_loop.py` 新增 `_call_llm()` 方法，含 3 次重试 + 120s 超时
+  3. C3: `governance.py` 新增 `HITLState.is_expired()` 方法，5 分钟超时
+  4. M1: `pipeline.py` 改用 `ThreadPoolExecutor` 并行执行 sensor
+  5. M2: `engine.py` 修改 `decide()` 逻辑，RETRY → ROLLBACK → ASK_USER 三级渐进
+  6. M3: PLAN.md 移除不存在的文件引用（git_ops.py、test_git_ops.py 等）
+  7. M4: AGENT_LOG.md 和 REFLECTION.md 的 commit 数修正为 35
+  8. M5: 新增 `.git/hooks/pre-commit` 扫描 API key 和敏感文件
+  9. M6: 新增 `AGENTS.md` 补充规则文件
+  10. M7: SPEC.md 中 DESIGN.md 路径修正为 `coding_agent/presentation/static/DESIGN.md`
+  11. m1: `models.py` StepRecord 新增 llm_response、governance_result、feedback_report 字段
+  12. m2: `governance.py` 新增 `set_tool_permissions()` 方法，支持从 ToolManager 同步权限
+  13. m3: Makefile `clean` 改用 Python 跨平台实现
+  14. m4: Dockerfile 恢复为生产镜像（移除 dev 依赖和测试文件）
+  15. m5: `.gitlab-ci.yml` 改用 `pip install -e ".[dev]"`
+  16. m6: SPEC.md 新增 9.4 测试策略章节
+  17. m7: AGENT_LOG.md 补充 CLAUDE.md 创建记录
+- **测试**：109/109 passed
+- **人工干预**：全部手写，因涉及多文件协调修改
+
+### 记录 7.3 · 补充 CLAUDE.md 创建记录
+
+- **时间**：2026-07-10 10:30（补记）
+- **技能**：`writing-plans`
+- **模型**：主对话 Opus
+- **任务**：在 writing-plans 阶段同时创建了 CLAUDE.md 项目级 agent 章程
+- **产出**：commit `01d7e81`（与 PLAN.md 初始版本同 commit）
+- **教训**：AGENT_LOG 应记录所有过程性产出，不仅是代码实现
+
+---
+
 ## 总结统计
 
 | 指标 | 数值 |
 |------|------|
-| 总 commit 数 | 29 |
+| 总 commit 数 | 35 |
 | 总 task 数 | 26（按 PLAN.md） |
 | 使用的 subagent 数 | ~20（Sonnet general-purpose） |
 | 总测试数 | 109 |
 | 测试通过率 | 100%（109/109 passed） |
 | 机制演示 | 3（治理拦截、反馈修正、完整管线） |
 | 部署环境 | 阿里云 ECS + systemd |
-| 人工干预次数 | 7（build-backend 修正、PLAN.md 修订、governance 测试修正、memory 检索修正、跨平台修复、前端重设计、服务器部署） |
+| 人工干预次数 | 8（build-backend 修正、PLAN.md 修订、governance 测试修正、memory 检索修正、跨平台修复、前端重设计、服务器部署、第二轮审计修复） |
 
 ### 关键教训总结
 
@@ -396,3 +448,4 @@
 6. **依赖注入是测试的关键**：AgentLoop 的所有依赖通过接口注入，便于 mock 替换
 7. **Open Design 不是 CSS 框架**：需要 clone 实际仓库、阅读设计系统源码、使用真实令牌
 8. **服务器部署需要提前规划**：Python 版本、keyring 后端、安全组规则都是潜在阻塞点
+9. **多轮审计是质量保障**：第二次审计发现 17 个问题，其中 3 个 CRITICAL 级别（真实 LLM provider 缺失、LLM 重试/超时未实现、HITL 超时未实现），这些问题在第一次审计中被遗漏

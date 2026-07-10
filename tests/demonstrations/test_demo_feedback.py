@@ -109,15 +109,11 @@ def test_demo_feedback_loop_correction():
         )
 
         # 演示需要 write_file 自动执行，临时将权限设为 ALLOWED
-        original = Governance.TOOL_PERMISSIONS.get("write_file")
-        Governance.TOOL_PERMISSIONS["write_file"] = Permission.ALLOWED
+        governance._tool_permissions["write_file"] = Permission.ALLOWED
         try:
             result = loop.run(f"create {bad_file}")
         finally:
-            if original is not None:
-                Governance.TOOL_PERMISSIONS["write_file"] = original
-            else:
-                Governance.TOOL_PERMISSIONS.pop("write_file", None)
+            governance._tool_permissions["write_file"] = Permission.NEEDS_CONFIRMATION
 
         # 验证: 任务成功完成
         assert result.success is True, f"agent should succeed, got error: {result.error}"

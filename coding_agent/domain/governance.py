@@ -20,6 +20,8 @@ class PermissionResult:
 
 
 class HITLState:
+    HITL_TIMEOUT_S = 300  # 5 minutes
+
     def __init__(self):
         self._pending = False
         self._request_message = ""
@@ -52,13 +54,19 @@ class HITLState:
     def is_approved(self) -> bool:
         return self._approved
 
+    def is_expired(self) -> bool:
+        """Check if the HITL request has timed out."""
+        if self._resolved or not self._pending:
+            return False
+        return (time.time() - self._request_time) > self.HITL_TIMEOUT_S
+
     @property
     def message(self) -> str:
         return self._request_message
 
 
 class Governance:
-    # Tool permission levels
+    # Tool permission levels (default mapping, overridable via set_tool_permissions)
     TOOL_PERMISSIONS = {
         "read_file": Permission.ALLOWED,
         "list_dir": Permission.ALLOWED,
@@ -87,6 +95,22 @@ class Governance:
 
     def __init__(self, blocked_patterns: list[str] | None = None):
         self._blocked = blocked_patterns or self.BLOCKED_PATTERNS
+        self._tool_permissions: dict[str, Permission] = dict(self.TOOL_PERMISSIONS)
+
+    def set_tool_permissions(self, permissions: dict[str, str]) -> None:
+        """Update tool permissions from an external source (e.g. ToolManager).
+
+        Accepts a mapping of tool_name -> permission string (safe/risky/dangerous).
+        Converts to internal Permission enum.
+        """
+        mapping = {
+            "safe": Permission.ALLOWED,
+            "risky": Permission.NEEDS_CONFIRMATION,
+            "dangerous": Permission.NEEDS_HITL,
+        }
+        for name, perm_str in permissions.items():
+            if perm_str in mapping:
+                self._tool_permissions[name] = mapping[perm_str]
 
     def check(self, action: Action) -> PermissionResult:
         if action.type == ActionType.DONE:
@@ -107,7 +131,7 @@ class Governance:
                     )
 
         # Check tool permission level
-        permission = self.TOOL_PERMISSIONS.get(tool_name)
+        permission = self._tool_permissions.get(tool_name)
         if permission is None:
             return PermissionResult(Permission.BLOCKED, f"Unknown tool: {tool_name}")
 

@@ -1,5 +1,6 @@
 """FeedbackPipeline: orchestrates sensors, classifier, and correction engine."""
 from __future__ import annotations
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from coding_agent.domain.feedback.sensors import Sensor, SyntaxSensor, TypeCheckSensor, LintSensor, TestSensor
 from coding_agent.domain.feedback.classifier import FailureClassifier, ClassifiedResult
@@ -20,9 +21,8 @@ class PipelineResult:
 class FeedbackPipeline:
     """Orchestrates sensor pipeline, failure classification, and correction strategy.
 
-    Runs sensors in order (syntax -> typecheck -> lint -> test),
-    classifies failures, decides a correction strategy, and generates
-    human-readable feedback text for injection into the agent context.
+    Runs sensors in parallel (ThreadPoolExecutor) for performance,
+    then classifies failures and decides a correction strategy.
     """
 
     def __init__(
@@ -38,6 +38,9 @@ class FeedbackPipeline:
     def run(self, changed_files: list[str]) -> PipelineResult:
         """Run the full feedback pipeline on the given changed files.
 
+        Sensors are executed in parallel using a thread pool.
+        Results are collected and passed to the classifier and engine.
+
         Args:
             changed_files: List of file paths that were changed.
 
@@ -51,9 +54,27 @@ class FeedbackPipeline:
             )
 
         reports: list[SensorReport] = []
-        for sensor in self.sensors:
-            report = sensor.sense(changed_files)
-            reports.append(report)
+        with ThreadPoolExecutor(max_workers=len(self.sensors)) as executor:
+            future_to_sensor = {
+                executor.submit(sensor.sense, changed_files): sensor
+                for sensor in self.sensors
+            }
+            for future in as_completed(future_to_sensor):
+                try:
+                    report = future.result()
+                    reports.append(report)
+                except Exception:
+                    sensor = future_to_sensor[future]
+                    reports.append(SensorReport(
+                        sensor_name=sensor.name,
+                        passed=False,
+                        failures=[],
+                        duration_ms=0,
+                    ))
+
+        # Sort reports by sensor order (syntax -> typecheck -> lint -> test)
+        name_order = {s.name: i for i, s in enumerate(self.sensors)}
+        reports.sort(key=lambda r: name_order.get(r.sensor_name, 999))
 
         classified = self.classifier.classify(reports)
         strategy = self.engine.decide(classified)

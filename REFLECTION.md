@@ -140,7 +140,7 @@ TDD 在 agentic 开发中比传统开发更有价值。因为 AI 生成的代码
 
 ## 七、结论
 
-本次项目通过 Superpowers 工作流，完成了从零到交付的完整 Coding Agent Harness 实现。27 个 commit、109 个测试、3 个机制演示、完整的 WebUI 和 Docker 分发——所有这些都通过 subagent-driven development 完成，由 mock LLM 确定性地验证。
+本次项目通过 Superpowers 工作流，完成了从零到交付的完整 Coding Agent Harness 实现。35 个 commit、109 个测试、3 个机制演示、完整的 WebUI 和 Docker 分发——所有这些都通过 subagent-driven development 完成，由 mock LLM 确定性地验证。
 
 最重要的收获是：**工程纪律是驾驭 AI 的前提**。brainstorming 的设计决策、writing-plans 的精确分解、TDD 的测试先行、冷启动验证的质量门禁、两阶段评审的合规检查——这些纪律不是束缚，而是确保 AI 产出可验证、可信任的保障。
 

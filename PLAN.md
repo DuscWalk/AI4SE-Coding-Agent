@@ -21,7 +21,7 @@ coding_agent/
 │   ├── llm_provider.py
 │   ├── credential_store.py
 │   ├── file_system.py
-│   ├── git_ops.py
+│   ├── real_llm.py
 │   ├── subprocess_manager.py
 │   └── vector_store.py
 ├── domain/
@@ -66,7 +66,6 @@ tests/
 │   ├── test_llm_provider.py
 │   ├── test_credential_store.py
 │   ├── test_file_system.py
-│   ├── test_git_ops.py
 │   ├── test_subprocess_manager.py
 │   └── test_vector_store.py
 ├── domain/
@@ -74,10 +73,7 @@ tests/
 │   ├── test_tool_manager.py
 │   ├── test_tools/
 │   │   ├── test_file_tools.py
-│   │   ├── test_search_tools.py
 │   │   ├── test_shell_tool.py
-│   │   ├── test_git_tools.py
-│   │   └── test_test_tool.py
 │   ├── test_governance.py
 │   ├── test_feedback/
 │   │   ├── test_sensors.py
@@ -3894,7 +3890,4 @@ ruff check coding_agent/
 
 # 5. Docker 构建
 docker build -t coding-agent .
-
-# 6. CI 模拟
-pytest tests/ -v --tb=short
 ```

@@ -16,5 +16,5 @@ typecheck:
 	mypy coding_agent/ --ignore-missing-imports
 
 clean:
-	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
-	find . -type f -name '*.pyc' -delete 2>/dev/null || true
+	python -c "import pathlib, shutil; [shutil.rmtree(p) for p in pathlib.Path('.').rglob('__pycache__')]"
+	python -c "import pathlib; [p.unlink() for p in pathlib.Path('.').rglob('*.pyc')]"

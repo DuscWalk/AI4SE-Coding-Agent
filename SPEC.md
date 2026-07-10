@@ -402,7 +402,7 @@ coding-agent serve --port 8080
 | **ruff** | Lint sensor | 极快、Python 原生、替代 flake8 |
 | **mypy** | 类型检查 | Python 静态类型标准工具 |
 | **Docker** | 分发 | 环境一致、一键运行、课程要求 |
-| **原生 HTML/CSS/JS + Open Design** | 前端 | 无框架依赖、轻量、易于打包。使用 Open Design 的 `linear-app` 设计系统（Linear-inspired dark-mode-first），`prototype` skill 生成界面。设计令牌源自 `design-systems/linear-app/tokens.css`，详见 `DESIGN.md` |
+| **原生 HTML/CSS/JS + Open Design** | 前端 | 无框架依赖、轻量、易于打包。使用 Open Design 的 `linear-app` 设计系统（Linear-inspired dark-mode-first），`prototype` skill 生成界面。设计令牌源自 `design-systems/linear-app/tokens.css`，详见 `coding_agent/presentation/static/DESIGN.md` |
 
 ---
 
@@ -456,6 +456,20 @@ coding-agent serve --port 8080
 | 反馈管线 | 构造变更文件（含故意错误），断言 Sensor 检测、分类、策略 | 真实 LLM |
 | 记忆读写 | 写入/检索 MemoryEntry，断言检索结果 | 真实 LLM |
 | 配置加载 | 加载 fixture 配置文件，断言 Config 字段值 | 真实 LLM |
+
+### 9.4 测试策略
+
+**分层测试原则**：
+
+| 测试层 | 范围 | mock 策略 | fixture |
+|--------|------|-----------|---------|
+| 单元测试 | 单个类/函数 | Mock LLM (ScriptedMockLLM / RuleBasedMockLLM) | `conftest.py` 中的共享 fixture |
+| 集成测试 | 跨模块交互 | Mock LLM + 真实工具分发 | 临时目录 + git init |
+| 机制演示 | 端到端场景 | ScriptedMockLLM 预设对话序列 | 临时项目目录 + 故意错误文件 |
+
+**核心原则**：移除真实 LLM 后，所有核心机制仍可用确定性单元测试验证。测试不依赖网络、不依赖真实 API key。
+
+**TDD 纪律**：先写失败测试（红灯）→ 确认失败原因 → 写最小实现（绿灯）→ 重构（保持绿灯）。
 
 ---
 

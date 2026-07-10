@@ -2,6 +2,7 @@ from __future__ import annotations
 import datetime
 import uuid
 from enum import Enum
+from typing import Any
 from pydantic import BaseModel, Field
 
 
@@ -93,6 +94,9 @@ class StepRecord(BaseModel):
     step_number: int
     action: Action | None = None
     action_result: ActionResult | None = None
+    llm_response: Any | None = None
+    governance_result: Any | None = None
+    feedback_report: Any | None = None
     timestamp: datetime.datetime = Field(default_factory=datetime.datetime.now)
 
 

@@ -10,12 +10,13 @@ def test_retry_on_blocking():
     assert engine.decide(result) == CorrectionStrategy.RETRY
 
 
-def test_retry_then_ask_user():
-    """retry_count 超过 max_retries 后应返回 ASK_USER。"""
+def test_retry_then_rollback_then_ask_user():
+    """渐进式升级：RETRY → ROLLBACK → ASK_USER。"""
     engine = CorrectionEngine(max_retries=2)
     result = ClassifiedResult(has_blocking=True)
     assert engine.decide(result) == CorrectionStrategy.RETRY
     assert engine.decide(result) == CorrectionStrategy.RETRY
+    assert engine.decide(result) == CorrectionStrategy.ROLLBACK
     assert engine.decide(result) == CorrectionStrategy.ASK_USER
 
 

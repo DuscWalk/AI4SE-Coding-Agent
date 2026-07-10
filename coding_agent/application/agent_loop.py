@@ -2,6 +2,8 @@
 """AgentLoop: main loop orchestrating all harness components."""
 from __future__ import annotations
 
+import time
+
 from coding_agent.domain.models import Action, ActionType, AgentResult, Message, StepRecord
 from coding_agent.domain.tool_manager import ToolManager
 from coding_agent.domain.governance import Governance, Permission
@@ -23,6 +25,9 @@ class AgentLoop:
       3. Stop on DONE action, max steps exceeded, or unrecoverable error.
     """
 
+    LLM_MAX_RETRIES = 3
+    LLM_TIMEOUT = 120.0  # seconds
+
     def __init__(
         self,
         llm: LLMProvider,
@@ -42,6 +47,31 @@ class AgentLoop:
         self.session_manager = session_manager
         self.memory = memory
         self.config = config
+
+    def _call_llm(self, context: list[Message]) -> LLMProvider.LLMResponse | None:
+        """Call LLM with retry and timeout.
+
+        Retries up to LLM_MAX_RETRIES on failure.
+        Returns None if all retries are exhausted.
+        """
+        import concurrent.futures
+
+        for attempt in range(1, self.LLM_MAX_RETRIES + 1):
+            try:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                    future = executor.submit(
+                        self.llm.chat, context, self.tool_manager.list_defs()
+                    )
+                    return future.result(timeout=self.LLM_TIMEOUT)
+            except concurrent.futures.TimeoutError:
+                if attempt < self.LLM_MAX_RETRIES:
+                    continue
+            except Exception:
+                if attempt < self.LLM_MAX_RETRIES:
+                    time.sleep(0.5)
+                    continue
+
+        return None
 
     def run(self, goal: str) -> AgentResult:
         """Execute the agent loop for a given goal.
@@ -63,8 +93,15 @@ class AgentLoop:
             if self._context_too_large(context):
                 context = self.memory.compress(context)
 
-            # 1. Call LLM
-            response = self.llm.chat(context, self.tool_manager.list_defs())
+            # 1. Call LLM (with retry and timeout)
+            response = self._call_llm(context)
+            if response is None:
+                result = AgentResult(
+                    success=False,
+                    error="LLM call failed after retries or timed out",
+                )
+                self.session_manager.complete(session.id, result)
+                return result
 
             # 2. Parse action from LLM response
             action = self.action_parser.parse(response)

@@ -62,7 +62,7 @@ def test_demo_pipeline_no_errors():
 
 
 def test_demo_retry_limit():
-    """验证重试次数上限后升级为 ASK_USER"""
+    """验证渐进式升级：RETRY → ROLLBACK → ASK_USER"""
     engine = CorrectionEngine(max_retries=2)
     from coding_agent.domain.feedback.classifier import ClassifiedResult
 
@@ -70,4 +70,5 @@ def test_demo_retry_limit():
 
     assert engine.decide(blocking_result) == CorrectionStrategy.RETRY
     assert engine.decide(blocking_result) == CorrectionStrategy.RETRY
+    assert engine.decide(blocking_result) == CorrectionStrategy.ROLLBACK
     assert engine.decide(blocking_result) == CorrectionStrategy.ASK_USER

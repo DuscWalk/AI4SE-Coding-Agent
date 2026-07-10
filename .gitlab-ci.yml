@@ -5,7 +5,6 @@ unit-test:
   stage: test
   image: python:3.11
   before_script:
-    - pip install fastapi uvicorn[standard] pydantic openai keyring pyyaml httpx
-    - pip install pytest pytest-asyncio ruff mypy
+    - pip install -e ".[dev]"
   script:
     - pytest tests/ -v --tb=short
