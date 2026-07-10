@@ -7,6 +7,10 @@ let ws = null;
 let currentSessionId = null;
 let pendingApproval = null;
 let sessions = [];
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+const MAX_RECONNECT_ATTEMPTS = 5;
+const RECONNECT_DELAY_MS = 3000;
 
 // ---- DOM Refs ----
 const statusIndicator = document.getElementById("status-indicator");
@@ -73,6 +77,8 @@ function connectWebSocket(sessionId) {
 
   ws.onopen = function () {
     setConnectionStatus("online", "Connected");
+    reconnectAttempts = 0;
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
   };
 
   ws.onmessage = function (event) {
@@ -86,6 +92,12 @@ function connectWebSocket(sessionId) {
   ws.onclose = function () {
     setConnectionStatus("offline", "Disconnected");
     ws = null;
+    if (currentSessionId && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
+      reconnectAttempts += 1;
+      reconnectTimer = setTimeout(function () {
+        connectWebSocket(currentSessionId);
+      }, RECONNECT_DELAY_MS);
+    }
   };
 
   ws.onerror = function (err) { console.error("WS error:", err); };

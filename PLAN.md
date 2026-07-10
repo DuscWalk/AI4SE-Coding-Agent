@@ -1,6 +1,6 @@
 # Coding Agent Harness 实现计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 从零实现一个 Coding Agent Harness，分层架构（表示层/应用层/领域层/基础设施层），反馈闭环为主贡献
 
@@ -168,7 +168,7 @@ Task 26 (README)
 
 **平台注意**：以下命令均给出 PowerShell 版本。如果在 Linux/macOS 上运行，`mkdir -p` 可用，`New-Item` 需替换。
 
-- [ ] **Step 1: 创建 pyproject.toml（不含 chromadb）**
+- [x] **Step 1: 创建 pyproject.toml（不含 chromadb）**
 
 > 注意：chromadb 推迟到 Task 9 安装，避免 Windows 上 C++ 构建工具问题阻塞初始骨架搭建。
 
@@ -201,7 +201,7 @@ dev = [
 ]
 ```
 
-- [ ] **Step 2: 验证 pyproject.toml 已创建**
+- [x] **Step 2: 验证 pyproject.toml 已创建**
 
 ```powershell
 Get-Content -Encoding UTF8 -LiteralPath pyproject.toml
@@ -209,7 +209,7 @@ Get-Content -Encoding UTF8 -LiteralPath pyproject.toml
 
 Expected: 显示上述 TOML 内容，确认 `chromadb` 不在依赖列表中。
 
-- [ ] **Step 3: 创建包目录结构**
+- [x] **Step 3: 创建包目录结构**
 
 ```powershell
 New-Item -ItemType Directory -Force -Path coding_agent/infrastructure
@@ -225,7 +225,7 @@ New-Item -ItemType Directory -Force -Path tests/presentation
 New-Item -ItemType Directory -Force -Path tests/demonstrations
 ```
 
-- [ ] **Step 4: 验证目录结构**
+- [x] **Step 4: 验证目录结构**
 
 ```powershell
 Get-ChildItem -Recurse -Directory coding_agent/ | Select-Object FullName
@@ -234,7 +234,7 @@ Get-ChildItem -Recurse -Directory tests/ | Select-Object FullName
 
 Expected: 所有目录存在，无遗漏。
 
-- [ ] **Step 5: 创建所有 __init__.py**
+- [x] **Step 5: 创建所有 __init__.py**
 
 每个目录下创建空的 `__init__.py`（共 15 个文件）：
 
@@ -265,7 +265,7 @@ foreach ($d in $dirs) {
 }
 ```
 
-- [ ] **Step 6: 验证 __init__.py 文件**
+- [x] **Step 6: 验证 __init__.py 文件**
 
 ```powershell
 Get-ChildItem -Recurse -Filter "__init__.py" coding_agent/ | Select-Object FullName
@@ -274,11 +274,11 @@ Get-ChildItem -Recurse -Filter "__init__.py" tests/ | Select-Object FullName
 
 Expected: 16 个 `__init__.py` 文件。
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```powershell
 git add pyproject.toml coding_agent/ tests/
-git commit -m "feat: initialize project skeleton with directory structure"
+git commit -m "feat: initialize project skeleton with directory structure"  <!-- commit: a561118 -->
 ```
 
 ---
@@ -289,7 +289,7 @@ git commit -m "feat: initialize project skeleton with directory structure"
 
 **注意**：如果 pip install 失败（尤其是 chromadb 需要 Visual C++ 构建工具），先不带 chromadb 安装，chromadb 在 Task 9 单独处理。
 
-- [ ] **Step 1: 安装核心依赖（不含 chromadb）**
+- [x] **Step 1: 安装核心依赖（不含 chromadb）**
 
 ```powershell
 pip install -e ".[dev]"
@@ -302,7 +302,7 @@ pip install -e ".[dev]" --no-deps
 pip install fastapi uvicorn pydantic openai keyring pyyaml httpx pytest pytest-asyncio ruff mypy
 ```
 
-- [ ] **Step 2: 验证 pytest 可用**
+- [x] **Step 2: 验证 pytest 可用**
 
 ```powershell
 pytest --version
@@ -310,7 +310,7 @@ pytest --version
 
 Expected: 显示 pytest 8.x 版本号。
 
-- [ ] **Step 3: 验证包可导入**
+- [x] **Step 3: 验证包可导入**
 
 ```powershell
 python -c "import coding_agent; print('OK')"
@@ -318,7 +318,7 @@ python -c "import coding_agent; print('OK')"
 
 Expected: 输出 `OK`，无 ImportError。
 
-- [ ] **Step 4: Commit（如有变更）**
+- [x] **Step 4: Commit（如有变更）**
 
 ```powershell
 git status
@@ -334,7 +334,7 @@ git status
 - Create: `coding_agent/domain/models.py`
 - Create: `tests/domain/test_models.py`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/domain/test_models.py
@@ -405,7 +405,7 @@ def test_memory_entry():
     assert entry.type == "long_term"
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_models.py -v
@@ -413,7 +413,7 @@ pytest tests/domain/test_models.py -v
 
 Expected: FAIL (ModuleNotFoundError)
 
-- [ ] **Step 3: 实现数据模型**
+- [x] **Step 3: 实现数据模型**
 
 ```python
 # coding_agent/domain/models.py
@@ -542,7 +542,7 @@ class ConfigData(BaseModel):
     sensor_pipeline: list[str] = Field(default_factory=lambda: ["syntax", "typecheck", "lint", "test"])
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_models.py -v
@@ -550,11 +550,11 @@ pytest tests/domain/test_models.py -v
 
 Expected: PASS (8 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/models.py tests/domain/test_models.py
-git commit -m "feat: add core data models (Action, Message, SensorReport, Session, etc.)"
+git commit -m "feat: add core data models (Action, Message, SensorReport, Session, etc.)"  <!-- commit: 93aa595 -->
 ```
 
 ---
@@ -567,7 +567,7 @@ git commit -m "feat: add core data models (Action, Message, SensorReport, Sessio
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/domain/test_config.py
@@ -616,7 +616,7 @@ def test_load_claude_md():
         assert "pytest" in config.project_rules
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_config.py -v
@@ -624,7 +624,7 @@ pytest tests/domain/test_config.py -v
 
 Expected: FAIL (ModuleNotFoundError)
 
-- [ ] **Step 3: 实现配置系统**
+- [x] **Step 3: 实现配置系统**
 
 ```python
 # coding_agent/domain/config.py
@@ -665,7 +665,7 @@ class Config(ConfigData):
         return config
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_config.py -v
@@ -673,11 +673,11 @@ pytest tests/domain/test_config.py -v
 
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/config.py tests/domain/test_config.py
-git commit -m "feat: add config system with YAML and CLAUDE.md loading"
+git commit -m "feat: add config system with YAML and CLAUDE.md loading"  <!-- commit: c2cd212 -->
 ```
 
 ---
@@ -690,7 +690,7 @@ git commit -m "feat: add config system with YAML and CLAUDE.md loading"
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/infrastructure/test_credential_store.py
@@ -718,7 +718,7 @@ def test_status_not_configured():
     assert status["configured"] is False
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/infrastructure/test_credential_store.py -v
@@ -726,7 +726,7 @@ pytest tests/infrastructure/test_credential_store.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现凭据存储**
+- [x] **Step 3: 实现凭据存储**
 
 ```python
 # coding_agent/infrastructure/credential_store.py
@@ -765,7 +765,7 @@ class CredentialStore:
             pass
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/infrastructure/test_credential_store.py -v
@@ -773,11 +773,11 @@ pytest tests/infrastructure/test_credential_store.py -v
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/infrastructure/credential_store.py tests/infrastructure/test_credential_store.py
-git commit -m "feat: add credential store using Windows Credential Manager"
+git commit -m "feat: add credential store using Windows Credential Manager"  <!-- commit: 3b4d25d -->
 ```
 
 ---
@@ -790,7 +790,7 @@ git commit -m "feat: add credential store using Windows Credential Manager"
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/infrastructure/test_llm_provider.py
@@ -850,7 +850,7 @@ def test_llm_response_tool_calls():
     assert tc.arguments == {"command": "pytest"}
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/infrastructure/test_llm_provider.py -v
@@ -858,7 +858,7 @@ pytest tests/infrastructure/test_llm_provider.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 LLM 抽象层**
+- [x] **Step 3: 实现 LLM 抽象层**
 
 ```python
 # coding_agent/infrastructure/llm_provider.py
@@ -917,7 +917,7 @@ class RuleBasedMockLLM(LLMProvider):
         return LLMResponse(text="no matching rule", tool_calls=[])
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/infrastructure/test_llm_provider.py -v
@@ -925,11 +925,11 @@ pytest tests/infrastructure/test_llm_provider.py -v
 
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/infrastructure/llm_provider.py tests/infrastructure/test_llm_provider.py
-git commit -m "feat: add LLM abstraction with ScriptedMockLLM and RuleBasedMockLLM"
+git commit -m "feat: add LLM abstraction with ScriptedMockLLM and RuleBasedMockLLM"  <!-- commit: e63c090 -->
 ```
 
 ---
@@ -944,7 +944,7 @@ git commit -m "feat: add LLM abstraction with ScriptedMockLLM and RuleBasedMockL
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/infrastructure/test_file_system.py
@@ -1005,7 +1005,7 @@ def test_run_failing_command():
     assert result["exit_code"] == 1
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/infrastructure/test_file_system.py tests/infrastructure/test_subprocess_manager.py -v
@@ -1013,7 +1013,7 @@ pytest tests/infrastructure/test_file_system.py tests/infrastructure/test_subpro
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 ```python
 # coding_agent/infrastructure/file_system.py
@@ -1074,7 +1074,7 @@ class SubprocessManager:
             raise TimeoutError(f"Command timed out after {self.timeout}s: {command}")
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/infrastructure/test_file_system.py tests/infrastructure/test_subprocess_manager.py -v
@@ -1082,11 +1082,11 @@ pytest tests/infrastructure/test_file_system.py tests/infrastructure/test_subpro
 
 Expected: PASS (7 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/infrastructure/file_system.py coding_agent/infrastructure/subprocess_manager.py tests/infrastructure/test_file_system.py tests/infrastructure/test_subprocess_manager.py
-git commit -m "feat: add FileSystemManager with directory sandbox and SubprocessManager"
+git commit -m "feat: add FileSystemManager with directory sandbox and SubprocessManager"  <!-- commit: 6a1848d -->
 ```
 
 ---
@@ -1107,7 +1107,7 @@ git commit -m "feat: add FileSystemManager with directory sandbox and Subprocess
 
 **Depends on:** Task 2, Task 6
 
-- [ ] **Step 1: 写失败测试（ToolManager）**
+- [x] **Step 1: 写失败测试（ToolManager）**
 
 ```python
 # tests/domain/test_tool_manager.py
@@ -1154,7 +1154,7 @@ def test_tool_permission():
     assert tool.permission == ToolPermission.DANGEROUS
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_tool_manager.py -v
@@ -1162,7 +1162,7 @@ pytest tests/domain/test_tool_manager.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 ToolManager + 所有工具**
+- [x] **Step 3: 实现 ToolManager + 所有工具**
 
 ```python
 # coding_agent/domain/tool_manager.py
@@ -1321,7 +1321,7 @@ def register_test_tool(tm, sm: SubprocessManager):
     tm.register(ToolDef("run_test", "Run test suite", {}, ToolPermission.SAFE, run_test))
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_tool_manager.py -v
@@ -1329,11 +1329,11 @@ pytest tests/domain/test_tool_manager.py -v
 
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/tool_manager.py coding_agent/domain/tools/ tests/domain/test_tool_manager.py
-git commit -m "feat: add ToolManager with 10 built-in tools (file, search, shell, git, test)"
+git commit -m "feat: add ToolManager with 10 built-in tools (file, search, shell, git, test)"  <!-- commit: d112284 -->
 ```
 
 ---
@@ -1346,7 +1346,7 @@ git commit -m "feat: add ToolManager with 10 built-in tools (file, search, shell
 
 **Depends on:** Task 2, Task 7
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/domain/test_governance.py
@@ -1416,7 +1416,7 @@ def test_hitl_state_transitions():
     assert state2.status == "denied"
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_governance.py -v
@@ -1424,7 +1424,7 @@ pytest tests/domain/test_governance.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现治理护栏**
+- [x] **Step 3: 实现治理护栏**
 
 ```python
 # coding_agent/domain/governance.py
@@ -1503,7 +1503,7 @@ class Governance:
         return False
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_governance.py -v
@@ -1511,11 +1511,11 @@ pytest tests/domain/test_governance.py -v
 
 Expected: PASS (9 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/governance.py tests/domain/test_governance.py
-git commit -m "feat: add governance guardrail with 3-tier permission and blocked command patterns"
+git commit -m "feat: add governance guardrail with 3-tier permission and blocked command patterns"  <!-- commit: e88292f -->
 ```
 
 ---
@@ -1532,7 +1532,7 @@ git commit -m "feat: add governance guardrail with 3-tier permission and blocked
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/infrastructure/test_vector_store.py
@@ -1590,7 +1590,7 @@ def test_compress_context():
     assert len(compressed) < len(context)
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/infrastructure/test_vector_store.py tests/domain/test_memory.py -v
@@ -1598,7 +1598,7 @@ pytest tests/infrastructure/test_vector_store.py tests/domain/test_memory.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现**
+- [x] **Step 3: 实现**
 
 ```python
 # coding_agent/infrastructure/vector_store.py
@@ -1705,7 +1705,7 @@ class MemoryManager:
         return [b / 255.0 for b in h[:32]]
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/infrastructure/test_vector_store.py tests/domain/test_memory.py -v
@@ -1713,11 +1713,11 @@ pytest tests/infrastructure/test_vector_store.py tests/domain/test_memory.py -v
 
 Expected: PASS (6 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/infrastructure/vector_store.py coding_agent/domain/memory.py tests/infrastructure/test_vector_store.py tests/domain/test_memory.py
-git commit -m "feat: add memory system with InMemoryVectorStore and MemoryManager"
+git commit -m "feat: add memory system with InMemoryVectorStore and MemoryManager"  <!-- commit: da5a735 -->
 ```
 
 ---
@@ -1731,7 +1731,7 @@ git commit -m "feat: add memory system with InMemoryVectorStore and MemoryManage
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/domain/test_feedback/test_sensors.py
@@ -1764,7 +1764,7 @@ def test_syntax_sensor_empty_files():
     assert report.passed is True
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_feedback/test_sensors.py -v
@@ -1772,7 +1772,7 @@ pytest tests/domain/test_feedback/test_sensors.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 Sensor ABC + SyntaxSensor**
+- [x] **Step 3: 实现 Sensor ABC + SyntaxSensor**
 
 ```python
 # coding_agent/domain/feedback/sensors.py
@@ -1822,7 +1822,7 @@ class SyntaxSensor(Sensor):
         )
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_feedback/test_sensors.py -v
@@ -1830,11 +1830,11 @@ pytest tests/domain/test_feedback/test_sensors.py -v
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/feedback/__init__.py coding_agent/domain/feedback/sensors.py tests/domain/test_feedback/test_sensors.py
-git commit -m "feat: add Sensor ABC and SyntaxSensor for feedback pipeline"
+git commit -m "feat: add Sensor ABC and SyntaxSensor for feedback pipeline"  <!-- commit: 13ddde0 -->
 ```
 
 ---
@@ -1847,7 +1847,7 @@ git commit -m "feat: add Sensor ABC and SyntaxSensor for feedback pipeline"
 
 **Depends on:** Task 10
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # 追加到 tests/domain/test_feedback/test_sensors.py
@@ -1885,7 +1885,7 @@ def test_test_sensor_pass():
         assert isinstance(report, SensorReport)
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_feedback/test_sensors.py::test_typecheck_sensor_pass -v
@@ -1893,7 +1893,7 @@ pytest tests/domain/test_feedback/test_sensors.py::test_typecheck_sensor_pass -v
 
 Expected: FAIL (TypeCheckSensor not defined)
 
-- [ ] **Step 3: 实现剩余传感器**
+- [x] **Step 3: 实现剩余传感器**
 
 ```python
 # 追加到 coding_agent/domain/feedback/sensors.py
@@ -2024,7 +2024,7 @@ class TestSensor(Sensor):
         )
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_feedback/test_sensors.py -v
@@ -2032,11 +2032,11 @@ pytest tests/domain/test_feedback/test_sensors.py -v
 
 Expected: PASS (7 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/feedback/sensors.py tests/domain/test_feedback/test_sensors.py
-git commit -m "feat: add TypeCheckSensor, LintSensor, and TestSensor"
+git commit -m "feat: add TypeCheckSensor, LintSensor, and TestSensor"  <!-- commit: 98851ce -->
 ```
 
 ---
@@ -2049,7 +2049,7 @@ git commit -m "feat: add TypeCheckSensor, LintSensor, and TestSensor"
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/domain/test_feedback/test_classifier.py
@@ -2112,7 +2112,7 @@ def test_summary_text():
     assert "syntax" in result.summary.lower()
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_feedback/test_classifier.py -v
@@ -2120,7 +2120,7 @@ pytest tests/domain/test_feedback/test_classifier.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 FailureClassifier**
+- [x] **Step 3: 实现 FailureClassifier**
 
 ```python
 # coding_agent/domain/feedback/classifier.py
@@ -2194,7 +2194,7 @@ class FailureClassifier:
         return "\n".join(lines)
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_feedback/test_classifier.py -v
@@ -2202,11 +2202,11 @@ pytest tests/domain/test_feedback/test_classifier.py -v
 
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/feedback/classifier.py tests/domain/test_feedback/test_classifier.py
-git commit -m "feat: add FailureClassifier with category aggregation and summary generation"
+git commit -m "feat: add FailureClassifier with category aggregation and summary generation"  <!-- commit: 1e0c363 -->
 ```
 
 ---
@@ -2219,7 +2219,7 @@ git commit -m "feat: add FailureClassifier with category aggregation and summary
 
 **Depends on:** Task 2, Task 12
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/domain/test_feedback/test_engine.py
@@ -2252,7 +2252,7 @@ def test_reset_retry_count():
     assert engine.retry_count == 0
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_feedback/test_engine.py -v
@@ -2260,7 +2260,7 @@ pytest tests/domain/test_feedback/test_engine.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 CorrectionEngine**
+- [x] **Step 3: 实现 CorrectionEngine**
 
 ```python
 # coding_agent/domain/feedback/engine.py
@@ -2295,7 +2295,7 @@ class CorrectionEngine:
         self.retry_count = 0
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_feedback/test_engine.py -v
@@ -2303,11 +2303,11 @@ pytest tests/domain/test_feedback/test_engine.py -v
 
 Expected: PASS (4 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/feedback/engine.py tests/domain/test_feedback/test_engine.py
-git commit -m "feat: add CorrectionEngine with retry/ask_user/ignore strategies"
+git commit -m "feat: add CorrectionEngine with retry/ask_user/ignore strategies"  <!-- commit: 7a5f63a -->
 ```
 
 ---
@@ -2320,7 +2320,7 @@ git commit -m "feat: add CorrectionEngine with retry/ask_user/ignore strategies"
 
 **Depends on:** Task 10, 11, 12, 13
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/domain/test_feedback/test_pipeline.py
@@ -2366,7 +2366,7 @@ def test_pipeline_empty_files():
     assert result.feedback_text == "All checks passed."
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/domain/test_feedback/test_pipeline.py -v
@@ -2374,7 +2374,7 @@ pytest tests/domain/test_feedback/test_pipeline.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 FeedbackPipeline**
+- [x] **Step 3: 实现 FeedbackPipeline**
 
 ```python
 # coding_agent/domain/feedback/pipeline.py
@@ -2417,7 +2417,7 @@ class FeedbackPipeline:
         )
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/domain/test_feedback/test_pipeline.py -v
@@ -2425,11 +2425,11 @@ pytest tests/domain/test_feedback/test_pipeline.py -v
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/domain/feedback/pipeline.py tests/domain/test_feedback/test_pipeline.py
-git commit -m "feat: add FeedbackPipeline orchestrating sensors, classifier, and engine"
+git commit -m "feat: add FeedbackPipeline orchestrating sensors, classifier, and engine"  <!-- commit: 4e84d6f -->
 ```
 
 ---
@@ -2444,7 +2444,7 @@ git commit -m "feat: add FeedbackPipeline orchestrating sensors, classifier, and
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/application/test_action_parser.py
@@ -2485,7 +2485,7 @@ def test_parse_multiple_tool_calls_uses_first():
     assert action.tool_name == "read_file"
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/application/test_action_parser.py -v
@@ -2493,7 +2493,7 @@ pytest tests/application/test_action_parser.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 ActionParser**
+- [x] **Step 3: 实现 ActionParser**
 
 ```python
 # coding_agent/application/action_parser.py
@@ -2515,7 +2515,7 @@ class ActionParser:
         )
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/application/test_action_parser.py -v
@@ -2523,11 +2523,11 @@ pytest tests/application/test_action_parser.py -v
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/application/action_parser.py tests/application/test_action_parser.py
-git commit -m "feat: add ActionParser for converting LLMResponse to structured Action"
+git commit -m "feat: add ActionParser for converting LLMResponse to structured Action"  <!-- commit: 91e1f8d -->
 ```
 
 ---
@@ -2540,7 +2540,7 @@ git commit -m "feat: add ActionParser for converting LLMResponse to structured A
 
 **Depends on:** Task 2
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/application/test_session_manager.py
@@ -2584,7 +2584,7 @@ def test_get_nonexistent():
     assert sm.get("nonexistent") is None
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/application/test_session_manager.py -v
@@ -2592,7 +2592,7 @@ pytest tests/application/test_session_manager.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 SessionManager**
+- [x] **Step 3: 实现 SessionManager**
 
 ```python
 # coding_agent/application/session_manager.py
@@ -2637,7 +2637,7 @@ class SessionManager:
         return list(self._sessions.values())
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/application/test_session_manager.py -v
@@ -2645,11 +2645,11 @@ pytest tests/application/test_session_manager.py -v
 
 Expected: PASS (5 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/application/session_manager.py tests/application/test_session_manager.py
-git commit -m "feat: add SessionManager for session lifecycle and step recording"
+git commit -m "feat: add SessionManager for session lifecycle and step recording"  <!-- commit: ad2eacf -->
 ```
 
 ---
@@ -2662,7 +2662,7 @@ git commit -m "feat: add SessionManager for session lifecycle and step recording
 
 **Depends on:** Task 5, 7, 8, 14, 15, 16
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/application/test_agent_loop.py
@@ -2745,7 +2745,7 @@ def test_agent_blocked_by_governance():
     assert result.success is True
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/application/test_agent_loop.py -v
@@ -2753,7 +2753,7 @@ pytest tests/application/test_agent_loop.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 AgentLoop**
+- [x] **Step 3: 实现 AgentLoop**
 
 ```python
 # coding_agent/application/agent_loop.py
@@ -2855,7 +2855,7 @@ class AgentLoop:
         return total > self.config.max_context_tokens * 4
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/application/test_agent_loop.py -v
@@ -2863,11 +2863,11 @@ pytest tests/application/test_agent_loop.py -v
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/application/agent_loop.py tests/application/test_agent_loop.py
-git commit -m "feat: add AgentLoop main loop orchestrating all harness components"
+git commit -m "feat: add AgentLoop main loop orchestrating all harness components"  <!-- commit: 64dd170 -->
 ```
 
 ---
@@ -2884,7 +2884,7 @@ git commit -m "feat: add AgentLoop main loop orchestrating all harness component
 
 **Depends on:** Task 17
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 ```python
 # tests/presentation/test_app.py
@@ -2914,7 +2914,7 @@ def test_credentials_status(client):
     assert "configured" in response.json()
 ```
 
-- [ ] **Step 2: 运行测试确认失败**
+- [x] **Step 2: 运行测试确认失败**
 
 ```bash
 pytest tests/presentation/test_app.py -v
@@ -2922,7 +2922,7 @@ pytest tests/presentation/test_app.py -v
 
 Expected: FAIL
 
-- [ ] **Step 3: 实现 FastAPI + Routes + WebSocket**
+- [x] **Step 3: 实现 FastAPI + Routes + WebSocket**
 
 ```python
 # coding_agent/presentation/app.py
@@ -3005,7 +3005,7 @@ async def websocket_endpoint(websocket: WebSocket):
         pass
 ```
 
-- [ ] **Step 4: 运行测试确认通过**
+- [x] **Step 4: 运行测试确认通过**
 
 ```bash
 pytest tests/presentation/test_app.py -v
@@ -3013,11 +3013,11 @@ pytest tests/presentation/test_app.py -v
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add coding_agent/presentation/app.py coding_agent/presentation/routes.py coding_agent/presentation/websocket.py tests/presentation/test_app.py
-git commit -m "feat: add FastAPI app with REST routes, WebSocket, and credential endpoints"
+git commit -m "feat: add FastAPI app with REST routes, WebSocket, and credential endpoints"  <!-- commit: 8d6df5e -->
 ```
 
 ---
@@ -3031,7 +3031,7 @@ git commit -m "feat: add FastAPI app with REST routes, WebSocket, and credential
 
 **Depends on:** Task 18
 
-- [ ] **Step 1: 创建前端文件**
+- [x] **Step 1: 创建前端文件**
 
 ```html
 <!-- coding_agent/presentation/static/index.html -->
@@ -3193,15 +3193,15 @@ loadCredentialStatus();
 loadSessions();
 ```
 
-- [ ] **Step 2: 验证前端可访问**
+- [x] **Step 2: 验证前端可访问**
 
 启动 FastAPI 后访问 `http://localhost:8080`，确认页面加载成功
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add coding_agent/presentation/static/
-git commit -m "feat: add WebUI frontend with task input, live monitor, and credential management"
+git commit -m "feat: add WebUI frontend with task input, live monitor, and credential management"  <!-- commit: 2bebca1 -->
 ```
 
 ---
@@ -3214,7 +3214,7 @@ git commit -m "feat: add WebUI frontend with task input, live monitor, and crede
 
 **Depends on:** Task 18, Task 17
 
-- [ ] **Step 1: 更新 routes.py 添加 /api/run**
+- [x] **Step 1: 更新 routes.py 添加 /api/run**
 
 ```python
 # 在 routes.py 中追加
@@ -3235,7 +3235,7 @@ async def run_task(data: dict):
     return {"success": result.success, "answer": result.answer, "error": result.error}
 ```
 
-- [ ] **Step 2: 更新 app.py 注入依赖**
+- [x] **Step 2: 更新 app.py 注入依赖**
 
 ```python
 # 在 create_app 中注入
@@ -3246,7 +3246,7 @@ def create_app(loop: AgentLoop | None = None):
     ...
 ```
 
-- [ ] **Step 3: 运行测试**
+- [x] **Step 3: 运行测试**
 
 ```bash
 pytest tests/presentation/test_app.py -v
@@ -3254,11 +3254,11 @@ pytest tests/presentation/test_app.py -v
 
 Expected: PASS
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add coding_agent/presentation/
-git commit -m "feat: integrate AgentLoop with WebUI run endpoint"
+git commit -m "feat: integrate AgentLoop with WebUI run endpoint"  <!-- commit: a5dcbc7 -->
 ```
 
 ---
@@ -3273,7 +3273,7 @@ git commit -m "feat: integrate AgentLoop with WebUI run endpoint"
 
 **Depends on:** Task 17, Task 4
 
-- [ ] **Step 1: 实现 CLI 入口**
+- [x] **Step 1: 实现 CLI 入口**
 
 ```python
 # coding_agent/main.py
@@ -3327,14 +3327,14 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 2: 更新 pyproject.toml 添加 CLI 入口**
+- [x] **Step 2: 更新 pyproject.toml 添加 CLI 入口**
 
 ```toml
 [project.scripts]
 coding-agent = "coding_agent.main:main"
 ```
 
-- [ ] **Step 3: 验证 CLI**
+- [x] **Step 3: 验证 CLI**
 
 ```bash
 python -m coding_agent.main --help
@@ -3342,11 +3342,11 @@ python -m coding_agent.main --help
 
 Expected: 显示 help 文本
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add coding_agent/main.py coding_agent/__init__.py pyproject.toml
-git commit -m "feat: add CLI entry point with serve, credentials, and run commands"
+git commit -m "feat: add CLI entry point with serve, credentials, and run commands"  <!-- commit: 097e3bd -->
 ```
 
 ---
@@ -3358,7 +3358,7 @@ git commit -m "feat: add CLI entry point with serve, credentials, and run comman
 
 **Depends on:** Task 8
 
-- [ ] **Step 1: 写演示测试**
+- [x] **Step 1: 写演示测试**
 
 ```python
 # tests/demonstrations/test_demo_governance.py
@@ -3432,7 +3432,7 @@ def test_demo_governance_blocks_dangerous_action():
     assert governance.check(dangerous_action) == Governance.PermissionResult.BLOCKED if hasattr(Governance, 'PermissionResult') else False
 ```
 
-- [ ] **Step 2: 运行演示**
+- [x] **Step 2: 运行演示**
 
 ```bash
 pytest tests/demonstrations/test_demo_governance.py -v
@@ -3440,11 +3440,11 @@ pytest tests/demonstrations/test_demo_governance.py -v
 
 Expected: PASS
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/demonstrations/test_demo_governance.py
-git commit -m "feat: add mechanism demo 1 - governance guardrail blocking dangerous actions"
+git commit -m "feat: add mechanism demo 1 - governance guardrail blocking dangerous actions"  <!-- commit: aee2efc -->
 ```
 
 ---
@@ -3456,7 +3456,7 @@ git commit -m "feat: add mechanism demo 1 - governance guardrail blocking danger
 
 **Depends on:** Task 14, Task 17
 
-- [ ] **Step 1: 写演示测试**
+- [x] **Step 1: 写演示测试**
 
 ```python
 # tests/demonstrations/test_demo_feedback.py
@@ -3545,7 +3545,7 @@ def test_demo_feedback_loop_correction():
         assert "def hello():" in content
 ```
 
-- [ ] **Step 2: 运行演示**
+- [x] **Step 2: 运行演示**
 
 ```bash
 pytest tests/demonstrations/test_demo_feedback.py -v
@@ -3553,11 +3553,11 @@ pytest tests/demonstrations/test_demo_feedback.py -v
 
 Expected: PASS
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/demonstrations/test_demo_feedback.py
-git commit -m "feat: add mechanism demo 2 - feedback loop correction with SyntaxSensor"
+git commit -m "feat: add mechanism demo 2 - feedback loop correction with SyntaxSensor"  <!-- commit: e782c6f -->
 ```
 
 ---
@@ -3569,7 +3569,7 @@ git commit -m "feat: add mechanism demo 2 - feedback loop correction with Syntax
 
 **Depends on:** Task 14
 
-- [ ] **Step 1: 写演示测试**
+- [x] **Step 1: 写演示测试**
 
 ```python
 # tests/demonstrations/test_demo_pipeline.py
@@ -3648,7 +3648,7 @@ def test_demo_retry_limit():
     assert engine.decide(blocking_result) == CorrectionStrategy.ASK_USER
 ```
 
-- [ ] **Step 2: 运行演示**
+- [x] **Step 2: 运行演示**
 
 ```bash
 pytest tests/demonstrations/test_demo_pipeline.py -v
@@ -3656,11 +3656,11 @@ pytest tests/demonstrations/test_demo_pipeline.py -v
 
 Expected: PASS (3 tests)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/demonstrations/test_demo_pipeline.py
-git commit -m "feat: add mechanism demo 3 - full feedback pipeline (sensor→classify→strategy→feedback)"
+git commit -m "feat: add mechanism demo 3 - full feedback pipeline (sensor→classify→strategy→feedback)"  <!-- commit: dc69a9f -->
 ```
 
 ---
@@ -3674,7 +3674,7 @@ git commit -m "feat: add mechanism demo 3 - full feedback pipeline (sensor→cla
 
 **Depends on:** Task 21
 
-- [ ] **Step 1: 创建 Dockerfile**
+- [x] **Step 1: 创建 Dockerfile**
 
 ```dockerfile
 FROM python:3.11-slim
@@ -3686,7 +3686,7 @@ EXPOSE 8080
 CMD ["coding-agent", "serve", "--host", "0.0.0.0", "--port", "8080"]
 ```
 
-- [ ] **Step 2: 创建 .gitlab-ci.yml**
+- [x] **Step 2: 创建 .gitlab-ci.yml**
 
 ```yaml
 stages:
@@ -3701,7 +3701,7 @@ unit-test:
     - pytest tests/ -v --tb=short
 ```
 
-- [ ] **Step 3: 创建 conftest.py**
+- [x] **Step 3: 创建 conftest.py**
 
 ```python
 # tests/conftest.py
@@ -3710,7 +3710,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 ```
 
-- [ ] **Step 4: 运行完整测试**
+- [x] **Step 4: 运行完整测试**
 
 ```bash
 pytest tests/ -v --tb=short
@@ -3718,11 +3718,11 @@ pytest tests/ -v --tb=short
 
 Expected: 所有测试 PASS
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add Dockerfile .gitlab-ci.yml tests/conftest.py
-git commit -m "feat: add Dockerfile, CI config, and conftest fixtures"
+git commit -m "feat: add Dockerfile, CI config, and conftest fixtures"  <!-- commit: ef4bfec -->
 ```
 
 ---
@@ -3734,7 +3734,7 @@ git commit -m "feat: add Dockerfile, CI config, and conftest fixtures"
 
 **Depends on:** All previous tasks
 
-- [ ] **Step 1: 编写 README.md**
+- [x] **Step 1: 编写 README.md**
 
 ```markdown
 # Coding Agent Harness
@@ -3833,11 +3833,11 @@ coding_agent/          # 主包
 Python 3.11+, FastAPI, Pydantic, ChromaDB, keyring, pytest, ruff, mypy
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add README.md
-git commit -m "docs: add README with install, usage, security, and demo instructions"
+git commit -m "docs: add README with install, usage, security, and demo instructions"  <!-- commit: 5256270 -->
 ```
 
 ---

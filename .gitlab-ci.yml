@@ -1,5 +1,11 @@
+stages:
+  - test
+
 unit-test:
+  stage: test
   image: python:3.11
+  before_script:
+    - pip install fastapi uvicorn[standard] pydantic openai keyring pyyaml httpx
+    - pip install pytest pytest-asyncio ruff mypy
   script:
-    - pip install -e ".[dev]"
-    - pytest tests/ -v
+    - pytest tests/ -v --tb=short

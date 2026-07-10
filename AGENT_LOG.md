@@ -306,24 +306,93 @@
 
 ---
 
+## Phase 6: 部署与最终修复（2026-07-10）
+
+### 记录 6.1 · 跨平台测试修复
+
+- **时间**：2026-07-10 14:00
+- **技能**：直接编辑
+- **模型**：主对话 Opus
+- **任务**：修复 Linux 服务器上 5 个测试失败（3 个 credential_store + 2 个 subprocess）
+- **问题**：Linux 无 keyring 后端（需安装 keyrings.alt），`python` 命令不存在（需用 `sys.executable`）
+- **产出**：commit `37f7f0b`
+- **人工干预**：安装 keyrings.alt 到服务器 venv，修改 `test_subprocess_manager.py` 中的 `"python"` → `f"{sys.executable}"`
+- **教训**：跨平台部署需要提前测试，Windows 与 Linux 的命令和库差异会导致非预期失败
+
+### 记录 6.2 · 服务器部署
+
+- **时间**：2026-07-10 14:30
+- **技能**：直接操作（SSH + SCP + systemd）
+- **模型**：主对话 Opus
+- **任务**：部署到阿里云 ECS 服务器 `120.26.110.68`，配置 systemd 服务自动启停
+- **关键步骤**：
+  1. SCP 传输项目文件到 `/opt/coding-agent/`
+  2. 安装 Python 3.11（服务器原装 3.10）
+  3. 创建 venv 并安装依赖
+  4. 配置 `/etc/systemd/system/coding-agent.service`
+  5. 开放安全组端口 8081
+- **产出**：服务运行在 `http://120.26.110.68:8081`
+- **人工干预**：手动处理 SSH 密钥认证、安全组规则、keyrings.alt 安装
+- **教训**：systemd 服务配置需要 `--factory` 标志以支持 FastAPI app factory 模式
+
+### 记录 6.3 · WebUI 根路由修复
+
+- **时间**：2026-07-10 14:45
+- **技能**：直接编辑
+- **模型**：主对话 Opus
+- **任务**：添加 `/` 根路由重定向到 `/static/index.html`
+- **产出**：commit `c774253`
+- **人工干预**：在 `create_app()` 中添加 `@app.get("/")` 路由
+- **教训**：StaticFiles mount 到 `/` 会覆盖根路由，需要 mount 到 `/static` 并添加 RedirectResponse
+
+### 记录 6.4 · Open Design 前端重新设计
+
+- **时间**：2026-07-10 15:00
+- **技能**：直接编辑（基于 Open Design 仓库研究）
+- **模型**：主对话 Opus
+- **任务**：使用 Open Design 的 `linear-app` 设计系统重新设计前端
+- **关键步骤**：
+  1. 克隆 Open Design 仓库（nexu-io/open-design）
+  2. 阅读 `design-systems/linear-app/DESIGN.md`（9 节完整规范）
+  3. 提取 `design-systems/linear-app/tokens.css`（56 个 CSS 自定义属性）
+  4. 对照 `design-systems/linear-app/components.manifest.json` 确认组件
+  5. 完全重写 `DESIGN.md`、`style.css`、`index.html`、`app.js`
+- **产出**：commits `98b324d` + `c83de98`
+- **人工干预**：全部手写，因前端重设计需要精确匹配 Linear 设计令牌
+- **教训**：Open Design 不是 CSS 框架，是一套设计方法论——DESIGN.md + tokens.css + SKILL.md 驱动制品生成
+
+### 记录 6.5 · 过程文档与反思
+
+- **时间**：2026-07-10 15:30
+- **技能**：直接编辑
+- **模型**：主对话 Opus
+- **任务**：创建 AGENT_LOG.md 和 REFLECTION.md
+- **产出**：commit `4b5a9ad`
+- **人工干预**：全部手写，反思报告需个人撰写
+- **教训**：过程文档是 agentic 工程中最重要的证据，记录了每个决策和修正
+
+---
+
 ## 总结统计
 
 | 指标 | 数值 |
 |------|------|
-| 总 commit 数 | 27 |
+| 总 commit 数 | 29 |
 | 总 task 数 | 26（按 PLAN.md） |
 | 使用的 subagent 数 | ~20（Sonnet general-purpose） |
 | 总测试数 | 109 |
 | 测试通过率 | 100%（109/109 passed） |
-| 人工干预次数 | 4（build-backend 修正、PLAN.md 修订、governance 测试修正、memory 检索修正） |
-| 核心机制演示 | 3（治理拦截、反馈修正、完整管线） |
-| 代码行数 | ~4,000+（含测试） |
+| 机制演示 | 3（治理拦截、反馈修正、完整管线） |
+| 部署环境 | 阿里云 ECS + systemd |
+| 人工干预次数 | 7（build-backend 修正、PLAN.md 修订、governance 测试修正、memory 检索修正、跨平台修复、前端重设计、服务器部署） |
 
 ### 关键教训总结
 
 1. **冷启动验证是硬性门禁**：陌生 agent 发现了人类 review 容易忽略的错误（无效 build-backend）
 2. **PLAN.md 接口签名必须与实际一致**：AgentLoop 的多个接口与 PLAN.md 不匹配，agent 自行修正
-3. **平台差异不可忽视**：`mkdir -p` vs `New-Item`、单引号 vs 双引号、subprocess timeout 错误消息
+3. **平台差异不可忽视**：`mkdir -p` vs `New-Item`、`python` vs `python3`、keyring vs keyrings.alt
 4. **TDD 纪律确保可测试性**：109 个测试全部使用 mock LLM，无需真实 API key
 5. **subagent-driven 模式有效**：每个 task 由独立 Sonnet agent 执行，减少了上下文污染
 6. **依赖注入是测试的关键**：AgentLoop 的所有依赖通过接口注入，便于 mock 替换
+7. **Open Design 不是 CSS 框架**：需要 clone 实际仓库、阅读设计系统源码、使用真实令牌
+8. **服务器部署需要提前规划**：Python 版本、keyring 后端、安全组规则都是潜在阻塞点

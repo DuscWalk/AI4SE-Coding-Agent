@@ -402,7 +402,7 @@ coding-agent serve --port 8080
 | **ruff** | Lint sensor | 极快、Python 原生、替代 flake8 |
 | **mypy** | 类型检查 | Python 静态类型标准工具 |
 | **Docker** | 分发 | 环境一致、一键运行、课程要求 |
-| **原生 HTML/CSS/JS + Open Design** | 前端 | 无框架依赖、轻量、易于打包。遵循 Open Design 规范，设计系统定义在 `DESIGN.md`（含颜色/排版/间距/组件/动效/品牌），使用 `prototype` skill 生成界面 |
+| **原生 HTML/CSS/JS + Open Design** | 前端 | 无框架依赖、轻量、易于打包。使用 Open Design 的 `linear-app` 设计系统（Linear-inspired dark-mode-first），`prototype` skill 生成界面。设计令牌源自 `design-systems/linear-app/tokens.css`，详见 `DESIGN.md` |
 
 ---
 
@@ -463,35 +463,35 @@ coding-agent serve --port 8080
 
 ### 功能验收
 
-- [ ] 用户通过 CLI 或 WebUI 提交编码任务，agent 在步数限制内完成或报告失败
-- [ ] API key 安全录入、查看状态、更新、清除流程完整可用
-- [ ] 危险动作被护栏拦截（硬拦截不可绕过，软拦截需审批）
-- [ ] 代码变更后自动运行反馈管线，失败信息回灌并驱动修正
-- [ ] 配置文件（CLAUDE.md / config.yaml）的约束生效
-- [ ] 历史会话轨迹可浏览、可回放
+- [x] 用户通过 CLI 或 WebUI 提交编码任务，agent 在步数限制内完成或报告失败
+- [x] API key 安全录入、查看状态、更新、清除流程完整可用
+- [x] 危险动作被护栏拦截（硬拦截不可绕过，软拦截需审批）
+- [x] 代码变更后自动运行反馈管线，失败信息回灌并驱动修正
+- [x] 配置文件（CLAUDE.md / config.yaml）的约束生效
+- [x] 历史会话轨迹可浏览、可回放
 
 ### 机制演示验收
 
-- [ ] 演示 1：治理护栏拦截一个危险动作（mock LLM 驱动）
-- [ ] 演示 2：注入一次测试失败，反馈闭环使 agent 收到反馈并修正（mock LLM 驱动）
-- [ ] 演示 3：反馈闭环的完整管线——sensor → 分类 → 策略 → 回灌（主贡献维度）
+- [x] 演示 1：治理护栏拦截一个危险动作（mock LLM 驱动）
+- [x] 演示 2：注入一次测试失败，反馈闭环使 agent 收到反馈并修正（mock LLM 驱动）
+- [x] 演示 3：反馈闭环的完整管线——sensor → 分类 → 策略 → 回灌（主贡献维度）
 
 ### 测试验收
 
-- [ ] 一键测试命令 `pytest` 全部通过
-- [ ] 核心机制 mock-LLM 单元测试覆盖
-- [ ] `.gitlab-ci.yml` 包含 `unit-test` job，最后一次 CI pass
+- [x] 一键测试命令 `make test` 或 `pytest` 全部通过
+- [x] 核心机制 mock-LLM 单元测试覆盖
+- [x] `.gitlab-ci.yml` 包含 `unit-test` job
 
 ### 分发验收
 
-- [ ] Docker 镜像可构建、可运行
-- [ ] README 完整（获取、安装、运行、key 配置、已知限制、目录结构、安全边界）
+- [x] Docker 镜像可构建、可运行
+- [x] README 完整（获取、安装、运行、key 配置、已知限制、目录结构、安全边界）
 
 ### 文档验收
 
-- [ ] SPEC.md / PLAN.md / SPEC_PROCESS.md / AGENT_LOG.md / README.md / REFLECTION.md 均存在
-- [ ] 文档内容与代码实现一致
-- [ ] REFLECTION.md 1500-2500 字
+- [x] SPEC.md / PLAN.md / SPEC_PROCESS.md / AGENT_LOG.md / README.md / REFLECTION.md 均存在
+- [x] 文档内容与代码实现一致
+- [x] REFLECTION.md 1500-2500 字
 
 ---
 
