@@ -13,6 +13,7 @@ dependencies = [
     "pydantic>=2.5.0",
     "openai>=1.10.0",
     "keyring>=24.0.0",
+    "keyrings.alt>=5.0.0",
     "pyyaml>=6.0",
     "httpx>=0.26.0",
 ]

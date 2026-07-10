@@ -8,7 +8,13 @@ class CredentialStore:
     API_KEY_ENTRY = "api_key"
 
     def set_api_key(self, key: str) -> None:
-        keyring.set_password(self.SERVICE_NAME, self.API_KEY_ENTRY, key)
+        try:
+            keyring.set_password(self.SERVICE_NAME, self.API_KEY_ENTRY, key)
+        except keyring.errors.KeyringError:
+            raise RuntimeError(
+                "No keyring backend available. Install keyrings.alt on Linux "
+                "or configure a desktop keyring service."
+            )
 
     def get_api_key(self) -> str | None:
         try:
@@ -29,5 +35,5 @@ class CredentialStore:
     def clear_api_key(self) -> None:
         try:
             keyring.delete_password(self.SERVICE_NAME, self.API_KEY_ENTRY)
-        except keyring.errors.PasswordDeleteError:
+        except keyring.errors.KeyringError:
             pass
