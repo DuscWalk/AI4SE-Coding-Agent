@@ -3,20 +3,32 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from coding_agent.presentation.routes import create_router
+from coding_agent.presentation.routes import create_router, set_agent_loop
 from coding_agent.presentation.websocket import websocket_endpoint
 
+if TYPE_CHECKING:
+    from coding_agent.application.agent_loop import AgentLoop
 
-def create_app() -> FastAPI:
+
+def create_app(loop: AgentLoop | None = None) -> FastAPI:
     """Create and configure the FastAPI application.
+
+    Args:
+        loop: Optional AgentLoop instance for the /api/run endpoint.
+              When None, /api/run will still create sessions but won't
+              execute the agent loop.
 
     Returns:
         A fully configured FastAPI app with CORS, REST routes,
         WebSocket endpoint, and static file serving.
     """
+    if loop is not None:
+        set_agent_loop(loop)
+
     app = FastAPI(title="Coding Agent Harness")
 
     app.add_middleware(

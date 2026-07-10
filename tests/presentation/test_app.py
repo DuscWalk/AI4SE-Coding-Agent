@@ -33,3 +33,98 @@ def test_credentials_status(client):
     response = client.get("/api/credentials/status")
     assert response.status_code == 200
     assert "configured" in response.json()
+
+
+def test_run_endpoint_creates_session(client):
+    """POST /api/run should create a session and return a session_id."""
+    response = client.post("/api/run", json={"goal": "Test task"})
+    assert response.status_code == 200
+    data = response.json()
+    assert "session_id" in data
+    assert "id" in data
+    assert data["session_id"] == data["id"]
+
+
+def test_run_endpoint_rejects_empty_goal(client):
+    """POST /api/run with empty goal should return an error."""
+    response = client.post("/api/run", json={"goal": ""})
+    assert response.status_code == 200
+    data = response.json()
+    assert "error" in data
+
+
+def test_run_endpoint_creates_visible_session(client):
+    """POST /api/run creates a session that appears in GET /api/sessions."""
+    response = client.post("/api/run", json={"goal": "Visible task"})
+    session_id = response.json()["session_id"]
+
+    # List sessions should include the new one
+    response = client.get("/api/sessions")
+    sessions = response.json()
+    found = any(s["id"] == session_id for s in sessions)
+    assert found, f"Session {session_id} not found in sessions list"
+
+
+def test_get_session_by_id(client):
+    """GET /api/sessions/{id} should return session details."""
+    response = client.post("/api/run", json={"goal": "Detail test"})
+    session_id = response.json()["session_id"]
+
+    response = client.get(f"/api/sessions/{session_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["goal"] == "Detail test"
+    assert data["id"] == session_id
+
+
+def test_cancel_session(client):
+    """POST /api/sessions/{id}/cancel should cancel a session."""
+    response = client.post("/api/run", json={"goal": "Cancel test"})
+    session_id = response.json()["session_id"]
+
+    response = client.post(f"/api/sessions/{session_id}/cancel")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+
+    # Verify session is cancelled
+    response = client.get(f"/api/sessions/{session_id}")
+    assert response.json()["status"] == "CANCELLED"
+
+
+def test_approve_session(client):
+    """POST /api/sessions/{id}/approve should accept approval decision."""
+    response = client.post("/api/run", json={"goal": "Approve test"})
+    session_id = response.json()["session_id"]
+
+    response = client.post(
+        f"/api/sessions/{session_id}/approve",
+        json={"approved": True},
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["approved"] is True
+
+
+def test_approve_session_deny(client):
+    """POST /api/sessions/{id}/approve with approved=false should work."""
+    response = client.post("/api/run", json={"goal": "Deny test"})
+    session_id = response.json()["session_id"]
+
+    response = client.post(
+        f"/api/sessions/{session_id}/approve",
+        json={"approved": False},
+    )
+    assert response.status_code == 200
+    assert response.json()["approved"] is False
+
+
+def test_approve_nonexistent_session(client):
+    """POST /api/sessions/{id}/approve on nonexistent session returns error."""
+    response = client.post(
+        "/api/sessions/nonexistent-id/approve",
+        json={"approved": True},
+    )
+    assert response.status_code == 200
+    assert "error" in response.json()
