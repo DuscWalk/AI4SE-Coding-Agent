@@ -4,7 +4,61 @@
 
 ---
 
-## 一、brainstorming 关键节点
+## 一、brainstorming 对话节选
+
+以下节选 3 轮关键 brainstorming 对话，展示 AI 与人类的协作决策过程。
+
+### 节选 1：主贡献维度选择
+
+> **AI**：六个维度都要有最低实现，但你需要选一个做深。我建议从这几个里选：治理（护栏/沙箱/HITL）、反馈闭环（sensor/分类/修正）、扩展（工具分发/多 agent 编排）。你倾向于哪个？
+>
+> **我**：反馈闭环。coding 场景的反馈信号最客观——测试通过就是通过，类型错误就是错误。不像治理那样需要定义"什么是危险"，反馈信号天然是确定性的。
+>
+> **AI**：好选择。反馈闭环做深的话，你需要设计：Sensor 管线（哪些 sensor、什么顺序）、失败分类器（怎么聚合、怎么分类）、修正策略引擎（重试/回退/升级）。4 层管线够不够？
+>
+> **我**：语法→类型检查→lint→测试，按速度排序。语法错误最快（毫秒级），不需要等测试跑完。
+
+**处理决策**：确定了反馈闭环为主贡献，影响了 6 个 task（10-14、24）的设计。按速度排序的管线设计后来直接写入了 SPEC.md §3.5 和 §9.2。
+
+### 节选 2：技术栈抉择
+
+> **AI**：技术栈有几个选项：A) TypeScript + Node.js（全栈统一）、B) Python + FastAPI（生态成熟、课程友好）、C) Go（性能好但生态不如 Python）。你选哪个？
+>
+> **我**：B。Python 3.11+，FastAPI 做 Web，Pydantic 做数据模型。ChromaDB 是 Python 原生的，keyring 也是。如果选 TypeScript 这些都得重新找库。
+>
+> **AI**：LLM 供应商呢？OpenAI SDK 兼容协议最广，可以接 GPT-4o、Claude、DeepSeek。
+>
+> **我**：对，用 OpenAI 兼容协议。但要设计好 LLM 抽象层——必须能用 mock 替换，不然测试没法写。
+
+**处理决策**：确定了 Python + FastAPI 技术栈。LLM 抽象层设计为 `LLMProvider` ABC，支持 `ScriptedMockLLM` + `RuleBasedMockLLM` + `RealLLMProvider` 三种实现。
+
+### 节选 3：WebUI 设计——推翻 AI 的 React 建议
+
+> **AI**：前端建议用 React，组件化开发效率高，生态成熟。
+>
+> **我**：推翻。课程要求轻量，原生 HTML/CSS/JS 就够了。React 会增加依赖和构建步骤，对一个小型 WebUI 来说是过度设计。
+>
+> **AI**：明白。那用 Open Design 的 `linear-app` 设计系统来保证 UI 质量？它提供 CSS tokens 和设计规范，但不需要框架。
+>
+> **我**：可以。用 Open Design 的 tokens.css + 原生 DOM 操作。前端只需要 6 个面板：任务输入、实时监控、会话历史、审批、凭据管理、日志。
+
+**处理决策**：推翻了 AI 的 React 建议，选择了原生 HTML/CSS/JS + Open Design 设计令牌。这个决策体现了 YAGNI 原则——不做未要求的功能，不为单次使用引入框架。最终前端仅 3 个文件（index.html + style.css + app.js），总计约 800 行，无任何构建步骤。
+
+### 节选 4：Redis 建议被否决
+
+> **AI**：会话管理建议引入 Redis，支持分布式部署和多进程。
+>
+> **我**：否决。单机内存就够了，引入 Redis 是过度设计。这个项目不需要分布式，不需要横向扩展。SessionManager 用 JSON 文件持久化已经足够。
+>
+> **AI**：明白。那记忆存储用 ChromaDB 嵌入式向量数据库，不需要外部服务。
+>
+> **我**：对。但要提供 InMemoryVectorStore 降级方案，避免 ChromaDB 安装失败时整个记忆模块不可用。
+
+**处理决策**：否决了 Redis，选择了 JSON 文件 + ChromaDB 嵌入式方案。这个决策也写入了 SPEC.md 的技术选型表。
+
+---
+
+## 二、brainstorming 关键节点
 
 ### 1.1 项目上下文探索
 
@@ -38,7 +92,7 @@
 
 ---
 
-## 二、AI 建议中采纳、推翻、修正的部分
+## 三、AI 建议中采纳、推翻、修正的部分
 
 ### 2.1 采纳的 AI 建议
 
@@ -71,7 +125,7 @@
 
 ---
 
-## 三、冷启动验证
+## 四、冷启动验证
 
 ### 3.1 验证设计
 
@@ -128,7 +182,7 @@ pytest tests/domain/test_models.py -v
 
 ---
 
-## 四、PLAN.md 修订记录
+## 五、PLAN.md 修订记录
 
 ### 修订 1：Task 1 拆分 + build-backend 修正 + 平台加固（2026-07-10）
 
@@ -164,7 +218,7 @@ pytest tests/domain/test_models.py -v
 
 ---
 
-## 五、过程反思
+## 六、过程反思
 
 ### 5.1 规约质量评估
 
