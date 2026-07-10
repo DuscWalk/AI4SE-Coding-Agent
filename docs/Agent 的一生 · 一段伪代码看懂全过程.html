@@ -1,0 +1,5572 @@
+<!DOCTYPE html>
+<!-- saved from url=(0097)https://selearning.nju.edu.cn/pluginfile.php/50071/mod_resource/content/0/agent-loop.html?embed=1 -->
+<html lang="zh-CN" data-theme="light" data-immersive-translate-page-theme="light"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+    
+    
+    <meta name="viewport" content="width=device-width,
+      initial-scale=1.0">
+    <title>Agent 的一生 · 一段伪代码看懂全过程</title>
+    <style>
+    :root {
+      --ink: #13151b;
+      --ink2: #171a22;
+      --panel: #1c1f29;
+      --code: #14171e;
+      --paper: #e9e5da;
+      --mut: #8b91a0;
+      --faint: #5b616e;
+      --bronze: #c8a06a;
+      --rule: rgba(200, 160, 106, .22);
+      --mind: #f2b24c;
+      /* 智能 */
+      --ext: #56cdbf;
+      /* 扩展·动作 */
+      --info: #86c96a;
+      /* 信息 CE */
+      --gov: #ef8b78;
+      /* 治理 */
+      --config: #b69bdd;
+      /* 配置 */
+      --serif: Georgia, "Songti SC", "Noto Serif CJK SC", serif;
+      --sans: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, "PingFang SC", monospace;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html {
+      scroll-behavior: smooth
+    }
+
+    body {
+      margin: 0;
+      background: var(--ink);
+      color: var(--paper);
+      font-family: var(--sans);
+      line-height: 1.75;
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      opacity: .045;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    .wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 0 28px
+    }
+
+    /* ---------- header ---------- */
+    header.hero {
+      padding: 84px 0 40px;
+      border-bottom: 1px solid var(--rule)
+    }
+
+    .kicker {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .34em;
+      text-transform: uppercase;
+      color: var(--bronze);
+      margin-bottom: 22px
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: clamp(34px, 5.4vw, 60px);
+      line-height: 1.08;
+      margin: 0 0 8px;
+      letter-spacing: .5px
+    }
+
+    h1 .en {
+      display: block;
+      font-style: italic;
+      font-size: .42em;
+      color: var(--mut);
+      letter-spacing: .04em;
+      margin-top: 14px;
+      font-weight: 400
+    }
+
+    .thesis {
+      max-width: 760px;
+      margin: 30px 0 0;
+      font-size: 19px;
+      color: #d8d4c8
+    }
+
+    .thesis b {
+      color: var(--mind);
+      font-weight: 600
+    }
+
+    .howto {
+      margin-top: 26px;
+      font-size: 13.5px;
+      color: var(--mut);
+      font-family: var(--mono);
+      display: flex;
+      gap: 8px 22px;
+      flex-wrap: wrap
+    }
+
+    .howto span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px
+    }
+
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      display: inline-block
+    }
+
+    section.block {
+      padding: 60px 0;
+      border-bottom: 1px solid var(--rule)
+    }
+
+    .eyebrow {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .28em;
+      text-transform: uppercase;
+      color: var(--bronze);
+      margin-bottom: 14px
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-weight: 600;
+      font-size: clamp(26px, 3.4vw, 36px);
+      margin: 0 0 10px;
+      letter-spacing: .3px
+    }
+
+    .lead {
+      color: var(--mut);
+      max-width: 780px;
+      margin: 0 0 30px;
+      font-size: 15.5px
+    }
+
+    /* ---------- filter bar ---------- */
+    .filterbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      margin: 0 -28px 26px;
+      padding: 14px 28px;
+      background: rgba(19, 21, 27, .86);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--rule);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .filterbar .fl-label {
+      font-family: var(--mono);
+      font-size: 12px;
+      letter-spacing: .18em;
+      color: var(--faint);
+      text-transform: uppercase;
+      margin-right: 4px
+    }
+
+    .fbtn {
+      font-family: var(--sans);
+      font-size: 13.5px;
+      color: var(--mut);
+      background: transparent;
+      border: 1px solid var(--rule);
+      padding: 6px 14px;
+      border-radius: 30px;
+      cursor: pointer;
+      transition: .18s;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px
+    }
+
+    .fbtn:hover {
+      color: var(--paper);
+      border-color: rgba(255, 255, 255, .28)
+    }
+
+    .fbtn.on {
+      color: var(--ink);
+      font-weight: 600
+    }
+
+    .fbtn[data-l="all"].on {
+      background: var(--bronze);
+      border-color: var(--bronze)
+    }
+
+    .fbtn[data-l="mind"].on {
+      background: var(--mind);
+      border-color: var(--mind)
+    }
+
+    .fbtn[data-l="ext"].on {
+      background: var(--ext);
+      border-color: var(--ext)
+    }
+
+    .fbtn[data-l="info"].on {
+      background: var(--info);
+      border-color: var(--info)
+    }
+
+    .fbtn[data-l="gov"].on {
+      background: var(--gov);
+      border-color: var(--gov)
+    }
+
+    .fbtn[data-l="config"].on {
+      background: var(--config);
+      border-color: var(--config)
+    }
+
+    /* ---------- code window ---------- */
+    .codewin {
+      border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 11px;
+      overflow: hidden;
+      box-shadow: 0 30px 70px -30px rgba(0, 0, 0, .8);
+      background: var(--code)
+    }
+
+    .titlebar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 13px 18px;
+      background: #1a1d25;
+      border-bottom: 1px solid rgba(255, 255, 255, .06)
+    }
+
+    .tl {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%
+    }
+
+    .tl.r {
+      background: #e06c5a
+    }
+
+    .tl.y {
+      background: #e3b341
+    }
+
+    .tl.g {
+      background: #79c267
+    }
+
+    .fname {
+      margin-left: 12px;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--mut)
+    }
+
+    pre.code {
+      margin: 0;
+      padding: 22px 0;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 13.5px;
+      line-height: 1.95;
+      tab-size: 4
+    }
+
+    .ln {
+      display: flex;
+      padding: 0 22px;
+      white-space: pre;
+      border-left: 3px solid transparent
+    }
+
+    .ln:hover {
+      background: rgba(255, 255, 255, .025)
+    }
+
+    .ln .gut {
+      display: inline-block;
+      width: 34px;
+      flex: 0 0 34px;
+      text-align: right;
+      padding-right: 18px;
+      color: #3c424e;
+      user-select: none
+    }
+
+    .ln.sec1 {
+      border-left-color: rgba(182, 155, 221, .5)
+    }
+
+    .ln.sec2 {
+      border-left-color: rgba(86, 205, 191, .45)
+    }
+
+    .ln.sec3 {
+      border-left-color: rgba(239, 139, 120, .5)
+    }
+
+    .ln.frame {
+      color: var(--mind);
+      opacity: .55
+    }
+
+    .ln.star {
+      position: relative;
+      background: linear-gradient(90deg, rgba(242, 178, 76, .26), rgba(242, 178, 76, .08) 70%);
+      border-left: 4px solid var(--mind);
+      animation: starglow 2.8s ease-in-out infinite
+    }
+
+    @keyframes starglow {
+
+      0%,
+      100% {
+        box-shadow: inset 0 0 0 1px rgba(242, 178, 76, .16), 0 0 0 0 rgba(242, 178, 76, 0)
+      }
+
+      50% {
+        box-shadow: inset 0 0 0 1px rgba(242, 178, 76, .36), 0 0 20px -3px rgba(242, 178, 76, .45)
+      }
+    }
+
+    .ln.star .gut {
+      color: var(--mind);
+      font-weight: 700
+    }
+
+    .ln.star .t-com {
+      color: var(--mind);
+      opacity: .9;
+      font-weight: 600
+    }
+
+    .ln.star .t-fn-llm {
+      font-size: 1.18em;
+      letter-spacing: .5px;
+      text-shadow: 0 0 16px rgba(242, 178, 76, .7)
+    }
+
+    .ln.star .chip-mind {
+      background: rgba(242, 178, 76, .22);
+      padding: 1px 7px
+    }
+
+    .starflag {
+      display: inline-block;
+      margin-left: 16px;
+      font-family: var(--sans);
+      font-size: 11px;
+      letter-spacing: .05em;
+      color: var(--mind);
+      background: rgba(242, 178, 76, .16);
+      border: 1px solid var(--mind);
+      border-radius: 20px;
+      padding: 1px 11px;
+      vertical-align: middle;
+      white-space: nowrap;
+      animation: flagpulse 2.8s ease-in-out infinite
+    }
+
+    @keyframes flagpulse {
+
+      0%,
+      100% {
+        opacity: .7
+      }
+
+      50% {
+        opacity: 1
+      }
+    }
+
+    .codetxt {
+      display: inline-block
+    }
+
+    /* tokens */
+    .t-kw {
+      color: #d98ad0;
+      font-style: normal
+    }
+
+    .t-fn {
+      color: #7fb8ee
+    }
+
+    .t-str {
+      color: #cd9a6b
+    }
+
+    .t-num {
+      color: #d99a6c
+    }
+
+    .t-com {
+      color: #5e6573
+    }
+
+    .t-fn-llm {
+      color: var(--mind);
+      font-weight: 700
+    }
+
+    /* concept chips */
+    .chip {
+      cursor: pointer;
+      border-radius: 4px;
+      padding: 0 3px;
+      font-weight: 600;
+      transition: .15s;
+      border-bottom: 1.5px dashed transparent
+    }
+
+    .chip:hover {
+      filter: brightness(1.25)
+    }
+
+    .chip-mind {
+      color: var(--mind);
+      background: rgba(242, 178, 76, .1);
+      border-bottom-color: rgba(242, 178, 76, .5)
+    }
+
+    .chip-ext {
+      color: var(--ext);
+      background: rgba(86, 205, 191, .1);
+      border-bottom-color: rgba(86, 205, 191, .5)
+    }
+
+    .chip-info {
+      color: var(--info);
+      background: rgba(134, 201, 106, .1);
+      border-bottom-color: rgba(134, 201, 106, .5)
+    }
+
+    .chip-gov {
+      color: var(--gov);
+      background: rgba(239, 139, 120, .1);
+      border-bottom-color: rgba(239, 139, 120, .5)
+    }
+
+    .chip-config {
+      color: var(--config);
+      background: rgba(182, 155, 221, .1);
+      border-bottom-color: rgba(182, 155, 221, .5)
+    }
+
+    .chip.pulse {
+      animation: pulse 1.1s ease 2
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 transparent
+      }
+
+      50% {
+        box-shadow: 0 0 0 4px currentColor;
+        filter: brightness(1.4)
+      }
+    }
+
+    /* filtering dim */
+    body.flt .chip {
+      opacity: .16
+    }
+
+    body.flt-mind .chip-mind,
+    body.flt-ext .chip-ext,
+    body.flt-info .chip-info,
+    body.flt-gov .chip-gov,
+    body.flt-config .chip-config {
+      opacity: 1
+    }
+
+    /* tooltip */
+    #tip {
+      position: fixed;
+      z-index: 60;
+      width: 360px;
+      max-width: calc(100vw - 24px);
+      background: #0c0e13;
+      border: 1px solid var(--rule);
+      border-radius: 9px;
+      padding: 14px 16px;
+      box-shadow: 0 16px 44px -12px rgba(0, 0, 0, .85);
+      pointer-events: none;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity .14s, transform .14s
+    }
+
+    #tip.show {
+      opacity: 1;
+      transform: translateY(0)
+    }
+
+    #tip .tname {
+      font-weight: 700;
+      font-size: 15px;
+      margin-bottom: 4px;
+      color: var(--paper)
+    }
+
+    #tip .twhere {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--bronze);
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--rule)
+    }
+
+    #tip .tbody {
+      font-size: 13px;
+      line-height: 1.72;
+      color: var(--paper);
+      opacity: .92
+    }
+
+    /* ---------- concept cards ---------- */
+    .legend {
+      display: flex;
+      gap: 10px 20px;
+      flex-wrap: wrap;
+      margin: 0 0 28px;
+      font-size: 13.5px;
+      color: var(--mut)
+    }
+
+    .legend i {
+      width: 11px;
+      height: 11px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-right: 7px;
+      vertical-align: middle
+    }
+
+    .laygroup {
+      margin-top: 34px
+    }
+
+    .laygroup>h3 {
+      font-family: var(--serif);
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 4px;
+      display: flex;
+      align-items: center;
+      gap: 11px
+    }
+
+    .laygroup>h3 .lb {
+      width: 13px;
+      height: 13px;
+      border-radius: 3px;
+      display: inline-block
+    }
+
+    .laygroup>h3 .meta {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      letter-spacing: .12em;
+      color: var(--faint);
+      text-transform: uppercase;
+      font-weight: 400
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+      margin-top: 18px
+    }
+
+    .card {
+      border: 1px solid rgba(255, 255, 255, .07);
+      border-radius: 9px;
+      padding: 18px 19px;
+      background: var(--ink2);
+      transition: .2s;
+      cursor: pointer;
+      border-top: 2px solid transparent
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, .16)
+    }
+
+    .card h4 {
+      margin: 0 0 4px;
+      font-size: 16.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px
+    }
+
+    .card .badge {
+      font-family: var(--mono);
+      font-size: 10.5px;
+      letter-spacing: .1em;
+      padding: 2px 8px;
+      border-radius: 20px;
+      white-space: nowrap;
+      text-transform: uppercase
+    }
+
+    .card .where {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--faint);
+      margin: 0 0 9px
+    }
+
+    .card .desc {
+      margin: 0;
+      font-size: 14px;
+      color: #c5c2b8;
+      line-height: 1.7
+    }
+
+    .card.flash {
+      animation: flash 1.2s ease
+    }
+
+    @keyframes flash {
+
+      0%,
+      100% {
+        box-shadow: 0 0 0 0 transparent
+      }
+
+      30% {
+        box-shadow: 0 0 0 3px currentColor
+      }
+    }
+
+    .card-mind {
+      border-top-color: var(--mind)
+    }
+
+    .card-mind .badge {
+      background: rgba(242, 178, 76, .16);
+      color: var(--mind)
+    }
+
+    .card-mind h4,
+    .card-mind.flash {
+      color: var(--mind)
+    }
+
+    .card-ext {
+      border-top-color: var(--ext)
+    }
+
+    .card-ext .badge {
+      background: rgba(86, 205, 191, .16);
+      color: var(--ext)
+    }
+
+    .card-ext h4,
+    .card-ext.flash {
+      color: var(--ext)
+    }
+
+    .card-info {
+      border-top-color: var(--info)
+    }
+
+    .card-info .badge {
+      background: rgba(134, 201, 106, .16);
+      color: var(--info)
+    }
+
+    .card-info h4,
+    .card-info.flash {
+      color: var(--info)
+    }
+
+    .card-gov {
+      border-top-color: var(--gov)
+    }
+
+    .card-gov .badge {
+      background: rgba(239, 139, 120, .16);
+      color: var(--gov)
+    }
+
+    .card-gov h4,
+    .card-gov.flash {
+      color: var(--gov)
+    }
+
+    .card-config {
+      border-top-color: var(--config)
+    }
+
+    .card-config .badge {
+      background: rgba(182, 155, 221, .16);
+      color: var(--config)
+    }
+
+    .card-config h4,
+    .card-config.flash {
+      color: var(--config)
+    }
+
+    body.flt .card {
+      opacity: .2
+    }
+
+    body.flt-mind .card-mind,
+    body.flt-ext .card-ext,
+    body.flt-info .card-info,
+    body.flt-gov .card-gov,
+    body.flt-config .card-config {
+      opacity: 1
+    }
+
+    .card h4 .desc-name {
+      color: var(--paper)
+    }
+
+    /* ---------- flow diagram ---------- */
+    .flow {
+      display: grid;
+      gap: 0;
+      max-width: 720px;
+      margin: 8px auto 0
+    }
+
+    .stage {
+      border: 1px solid var(--rule);
+      border-radius: 10px;
+      padding: 20px 22px;
+      background: var(--ink2);
+      position: relative
+    }
+
+    .stage .tag {
+      position: absolute;
+      top: -12px;
+      left: 20px;
+      font-family: var(--mono);
+      font-size: 11.5px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      padding: 3px 11px;
+      border-radius: 20px;
+      background: var(--ink)
+    }
+
+    .stage h4 {
+      margin: 6px 0 6px;
+      font-family: var(--serif);
+      font-size: 19px;
+      font-weight: 600
+    }
+
+    .stage code {
+      font-family: var(--mono);
+      font-size: 12.5px;
+      color: var(--ext);
+      background: rgba(86, 205, 191, .08);
+      padding: 1px 6px;
+      border-radius: 4px
+    }
+
+    .stage p {
+      margin: 6px 0 0;
+      font-size: 14px;
+      color: var(--mut)
+    }
+
+    .stage.s1 {
+      border-left: 3px solid var(--config)
+    }
+
+    .stage.s1 .tag {
+      color: var(--config);
+      border: 1px solid rgba(182, 155, 221, .4)
+    }
+
+    .stage.s2 {
+      border-left: 3px solid var(--ext)
+    }
+
+    .stage.s2 .tag {
+      color: var(--ext);
+      border: 1px solid rgba(86, 205, 191, .4)
+    }
+
+    .stage.s3 {
+      border-left: 3px solid var(--gov)
+    }
+
+    .stage.s3 .tag {
+      color: var(--gov);
+      border: 1px solid rgba(239, 139, 120, .4)
+    }
+
+    .connector {
+      height: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--faint)
+    }
+
+    .connector .arr {
+      font-size: 18px;
+      line-height: 1
+    }
+
+    .connector .lbl {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--mut)
+    }
+
+    .loopwrap {
+      position: relative;
+      padding-left: 46px
+    }
+
+    .looparrow {
+      position: absolute;
+      left: 0;
+      top: 14px;
+      bottom: 14px;
+      width: 34px;
+      border: 2px solid var(--ext);
+      border-right: none;
+      border-radius: 14px 0 0 14px;
+      opacity: .5
+    }
+
+    .looparrow::before {
+      content: "↺";
+      position: absolute;
+      left: -9px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--ext);
+      font-size: 22px;
+      background: var(--ink);
+      padding: 2px 0
+    }
+
+    .perstep {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px
+    }
+
+    .perstep span {
+      font-family: var(--mono);
+      font-size: 11.5px;
+      color: var(--mut);
+      border: 1px solid var(--rule);
+      border-radius: 5px;
+      padding: 3px 8px
+    }
+
+    .perstep span.hot {
+      color: var(--mind);
+      border-color: rgba(242, 178, 76, .45);
+      background: rgba(242, 178, 76, .07)
+    }
+
+
+    footer {
+      padding: 50px 0 70px;
+      color: var(--faint);
+      font-size: 13.5px;
+      font-family: var(--mono)
+    }
+
+    footer b {
+      color: var(--mut);
+      font-weight: 400
+    }
+
+    .takeaway {
+      font-family: var(--serif);
+      font-size: clamp(20px, 2.6vw, 27px);
+      line-height: 1.5;
+      color: var(--paper);
+      max-width: 820px;
+      margin: 0 0 34px
+    }
+
+    .takeaway .hl {
+      color: var(--mind);
+      font-style: italic
+    }
+
+    @media (max-width:640px) {
+      .wrap {
+        padding: 0 18px
+      }
+
+      header.hero {
+        padding: 54px 0 30px
+      }
+
+      .filterbar {
+        margin: 0 -18px 22px;
+        padding: 12px 18px
+      }
+
+      pre.code {
+        font-size: 12px
+      }
+    }
+
+    /* ---------- theme toggle button ---------- */
+    .themebtn {
+      position: fixed;
+      top: 14px;
+      right: 16px;
+      z-index: 50;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--rule);
+      background: var(--ink2);
+      color: var(--paper);
+      cursor: pointer;
+      font-size: 18px;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: .2s;
+      box-shadow: 0 8px 22px -8px rgba(0, 0, 0, .55)
+    }
+
+    .themebtn:hover {
+      transform: scale(1.08);
+      border-color: var(--bronze)
+    }
+
+    /* ===================== LIGHT THEME ===================== */
+    [data-theme="light"] {
+      --ink: #f4f1e8;
+      --ink2: #fcfaf4;
+      --panel: #fcfaf4;
+      --code: #f6f2e8;
+      --paper: #23262e;
+      --mut: #5f636d;
+      --faint: #9a958a;
+      --bronze: #9c7434;
+      --rule: rgba(60, 45, 20, .16);
+      --mind: #b8801f;
+      --ext: #16968a;
+      --info: #4f8f37;
+      --gov: #cf5b46;
+      --config: #7c5bb0;
+    }
+
+    [data-theme="light"] body::before {
+      opacity: .03
+    }
+
+    [data-theme="light"] .thesis {
+      color: #3a3d44
+    }
+
+    [data-theme="light"] .thesis b {
+      color: #9c6a12
+    }
+
+    [data-theme="light"] .filterbar {
+      background: rgba(244, 241, 232, .92)
+    }
+
+    [data-theme="light"] .fbtn.on {
+      color: #fff
+    }
+
+    [data-theme="light"] .fbtn:hover {
+      border-color: rgba(0, 0, 0, .3)
+    }
+
+    [data-theme="light"] .codewin {
+      border-color: rgba(60, 45, 20, .16);
+      box-shadow: 0 22px 54px -32px rgba(70, 55, 25, .4)
+    }
+
+    [data-theme="light"] .titlebar {
+      background: #ece6d8;
+      border-bottom-color: rgba(60, 45, 20, .12)
+    }
+
+    [data-theme="light"] .ln:hover {
+      background: rgba(60, 45, 20, .04)
+    }
+
+    [data-theme="light"] .ln .gut {
+      color: #c3bca8
+    }
+
+    [data-theme="light"] .t-kw {
+      color: #a23ca0
+    }
+
+    [data-theme="light"] .t-fn {
+      color: #2563a8
+    }
+
+    [data-theme="light"] .t-str {
+      color: #8a5a1a
+    }
+
+    [data-theme="light"] .t-num {
+      color: #8a5a1a
+    }
+
+    [data-theme="light"] .t-com {
+      color: #9c9784
+    }
+
+    [data-theme="light"] .card {
+      border-color: rgba(60, 45, 20, .13)
+    }
+
+    [data-theme="light"] .card:hover {
+      border-color: rgba(60, 45, 20, .26)
+    }
+
+    [data-theme="light"] .card .desc {
+      color: #4a4d54
+    }
+
+    [data-theme="light"] #tip {
+      background: #fff;
+      border-color: rgba(60, 45, 20, .18);
+      box-shadow: 0 16px 40px -12px rgba(70, 55, 25, .28)
+    }
+
+    [data-theme="light"] .stage h4 {
+      color: var(--paper)
+    }
+
+    /* ---------- step walkthrough ---------- */
+    .stepper { display: flex; align-items: center; gap: 12px; margin: 0 0 18px }
+    .stepper .steps { display: flex; flex: 1; gap: 0 }
+    .stepbtn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; background: transparent; border: none; cursor: pointer; padding: 8px 4px 10px; color: var(--faint); font-family: var(--sans); border-bottom: 2px solid var(--rule); transition: .18s }
+    .stepbtn b { font-family: var(--mono); font-size: 12px; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; border-radius: 50%; border: 1px solid var(--rule); color: var(--mut) }
+    .stepbtn span { font-size: 12.5px; letter-spacing: .02em; white-space: nowrap }
+    .stepbtn:hover { color: var(--mut) }
+    .stepbtn:hover b { border-color: var(--bronze) }
+    .stepbtn.on { color: var(--paper); border-bottom-color: var(--bronze) }
+    .stepbtn.on b { color: var(--ink); background: var(--bronze); border-color: var(--bronze); font-weight: 700 }
+    .stepbtn.done b { border-color: var(--bronze); color: var(--bronze) }
+    .stepbtn.on[data-layer="mind"] { border-bottom-color: var(--mind) }
+    .stepbtn.on[data-layer="mind"] b { background: var(--mind); border-color: var(--mind) }
+    .stepbtn.on[data-layer="ext"] { border-bottom-color: var(--ext) }
+    .stepbtn.on[data-layer="ext"] b { background: var(--ext); border-color: var(--ext) }
+    .stepbtn.on[data-layer="info"] { border-bottom-color: var(--info) }
+    .stepbtn.on[data-layer="info"] b { background: var(--info); border-color: var(--info) }
+    .stepbtn.on[data-layer="gov"] { border-bottom-color: var(--gov) }
+    .stepbtn.on[data-layer="gov"] b { background: var(--gov); border-color: var(--gov) }
+    .ctl { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--rule); background: var(--ink2); color: var(--mut); cursor: pointer; font-size: 18px; line-height: 1; transition: .18s }
+    .ctl:hover { color: var(--paper); border-color: var(--bronze) }
+    .ctl:disabled { opacity: .3; cursor: default }
+    .ln.added { background: linear-gradient(90deg, rgba(134, 201, 106, .18), rgba(134, 201, 106, .04) 70%); border-left-color: var(--info) !important }
+    .ln.added .gut { color: var(--info); font-weight: 700 }
+    .ln.added .gut::after { content: "+"; margin-left: 3px }
+    .stepnote { margin: 18px 0 0; border: 1px solid var(--rule); border-left: 3px solid var(--bronze); border-radius: 8px; padding: 18px 22px; background: linear-gradient(180deg, rgba(200, 160, 106, .05), transparent) }
+    .stepnote h4 { margin: 0 0 12px; font-family: var(--serif); font-size: 18px; font-weight: 600; display: flex; align-items: center; gap: 10px }
+    .stepnote h4 .sn-dot { width: 12px; height: 12px; border-radius: 3px; display: inline-block }
+    .stepnote h4 .sn-step { font-family: var(--mono); font-size: 11.5px; color: var(--faint); letter-spacing: .12em; text-transform: uppercase }
+    .stepnote ul { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 9px }
+    .stepnote li { font-size: 14.5px; line-height: 1.72; color: #c5c2b8; padding-left: 18px; position: relative }
+    .stepnote li::before { content: "▸"; position: absolute; left: 0; color: var(--bronze) }
+    [data-theme="light"] .stepnote li { color: #4a4d54 }
+    [data-theme="light"] .ln.added { background: linear-gradient(90deg, rgba(79, 143, 55, .16), rgba(79, 143, 55, .03) 70%) }
+    @media (max-width:640px) { .stepbtn span { display: none } }
+  </style>
+    <script>
+    /* 在绘制前定主题,避免闪屏。缺省亮色;仅当用户显式选过暗色才暗 */
+    (function () {
+      var t; try { t = localStorage.getItem("pecehe-theme-2"); } catch (e) { }
+      document.documentElement.setAttribute("data-theme", t === "dark" ? "dark" : "light");
+    })();
+  </script>
+  </head>
+  <body>
+    <button class="themebtn" id="themebtn" title="切换亮 / 暗主题" aria-label="切换主题">☾</button>
+    <div class="wrap">
+      <header class="hero">
+        <div class="kicker">Harness Engineering </div>
+        <h1>Agent 的一生 <span class="en">One Loop to Read Them All —
+            一段伪代码看懂 Agent 的全过程</span> </h1>
+        <p class="thesis">整段代码里,大脑只做<b>一行</b>任务决策,其余全是工程。这就是 <b>Agent =
+            LLM × Harness</b> 最直白的说明:LLM 是 CPU,Harness 是让它可靠工作的操作系统。</p>
+        <div class="howto"> <span>Step 1–6 → 看循环如何长出来</span> <span>悬停概念 → 看简介</span> <span>点击概念 →
+            跳到详解卡片</span> <span>顶部按钮 → 按「层」筛选</span> </div>
+      </header>
+      <!-- ===================== CODE ===================== -->
+      <section class="block" id="code-block">
+        <div class="eyebrow">The Core Loop</div>
+        <h2>主循环 · 所有概念各就各位</h2>
+        <p class="lead">这段主循环可以<b>逐层展开</b>:用顶部 <b>Step 1–6</b> 从最简的「裸 LLM 循环」一步步叠加
+          harness,绿色高亮<b>本步新增的代码行</b>,配合下方讲解看清每一步多了什么能力(点胶囊或按 ← → 切换)。第
+          6 步是完整版,仍分三段:① 启动装配(一次性)→ ② while 主循环(每轮一次 LLM 决策)→ ③
+          收尾(退出后跑一次)。带颜色的 <b>【概念】</b> 标注可点。</p>
+        <div class="filterbar"> <span class="fl-label">按层高亮</span> <button class="fbtn on" data-l="all">全部</button> <button class="fbtn" data-l="mind"><span class="dot" style="background:var(--mind)"></span>智能</button> <button class="fbtn" data-l="ext"><span class="dot" style="background:var(--ext)"></span>扩展·动作</button> <button class="fbtn" data-l="info"><span class="dot" style="background:var(--info)"></span>信息 (CE)</button> <button class="fbtn" data-l="gov"><span class="dot" style="background:var(--gov)"></span>治理</button> <button class="fbtn" data-l="config"><span class="dot" style="background:var(--config)"></span>配置</button> </div>
+        <div class="stepper" id="stepper"><button class="ctl" id="stepPrev" aria-label="上一步" disabled="">‹</button><div class="steps"><button class="stepbtn on" data-s="0" data-layer="mind"><b>1</b><span>裸循环</span></button><button class="stepbtn" data-s="1" data-layer="ext"><b>2</b><span>加工具</span></button><button class="stepbtn" data-s="2" data-layer="info"><b>3</b><span>上下文工程</span></button><button class="stepbtn" data-s="3" data-layer="gov"><b>4</b><span>治理与安全</span></button><button class="stepbtn" data-s="4" data-layer="ext"><b>5</b><span>扩展与协作</span></button><button class="stepbtn" data-s="5" data-layer="gov"><b>6</b><span>反馈闭环</span></button></div><button class="ctl" id="stepNext" aria-label="下一步">›</button></div>
+        <div class="codewin">
+          <div class="titlebar"> <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span> <span class="fname">agent_loop.pseudo</span> </div>
+          <pre class="code" id="code"><div class="ln"><span class="gut">1</span><span class="codetxt"><span class="t-com"># 最简循环:此刻只有大脑在转,还没有任何 harness</span></span></div><div class="ln"><span class="gut">2</span><span class="codetxt"><span class="t-kw">function</span> <span class="t-fn">agent_loop</span>(goal):</span></div><div class="ln"><span class="gut">3</span><span class="codetxt">    context = [goal]                      <span class="t-com"># 提供给大脑的全部信息,目前只有任务本身</span></span></div><div class="ln"><span class="gut">4</span><span class="codetxt">    <span class="t-kw">while</span> <span class="t-kw">True</span>:</span></div><div class="ln star"><span class="gut">5</span><span class="codetxt">        text = <span class="chip chip-mind" data-id="llm" data-tip="1"><span class="t-fn-llm">LLM</span></span>(context)               <span class="t-com"># 大脑唯一的工作:看上下文,决定这一步说什么</span><span class="starflag">★ 唯一的「任务决策」LLM 调用</span></span></div><div class="ln"><span class="gut">6</span><span class="codetxt">        context += <span class="t-fn">message</span>(<span class="t-str">"assistant"</span>, text)   <span class="t-com"># 把回复追加进历史,下一轮它才记得自己说过什么</span></span></div><div class="ln"><span class="gut">7</span><span class="codetxt">        <span class="t-kw">if</span> <span class="t-fn">looks_done</span>(text):              <span class="t-com"># 粗糙的判停:文本里像是说完了,就停下</span></span></div><div class="ln"><span class="gut">8</span><span class="codetxt">            <span class="t-kw">return</span> text</span></div></pre>
+        </div>
+        <div class="stepnote" id="stepnote"><h4><span class="sn-dot" style="background:var(--mind)"></span><span class="sn-step">Step 1 / 6</span>裸循环</h4><ul><li>agent 的心脏就是一个 while 循环:把对话历史 context 提供给 LLM,它产出下一句,追加回历史,再进入下一轮。</li><li>此刻大脑只会“说”(text),还不能“做”:没有工具、没有记忆、没有治理,纯粹是个会应答的循环。</li><li>context 是它唯一的记忆:不把回复写回历史,下一轮它就忘了自己说过什么。</li></ul></div>
+      </section>
+      <!-- ===================== CARDS ===================== -->
+      <section class="block" id="cards-block">
+        <div class="eyebrow">The Cast</div>
+        <h2>逐概念详解 · 每个名词在哪一行</h2>
+        <p class="lead">按「层」分组。每张卡片回答三件事:它是什么、在循环里的哪个位置、为什么需要它。点卡片可在代码里高
+          亮对应标注。</p>
+        <div class="legend"> <span><i style="background:var(--mind)"></i>智
+            能(CPU)</span> <span><i style="background:var(--ext)"></i>扩展
+            与动作</span> <span><i style="background:var(--info)"></i>信息
+            (CE)</span> <span><i style="background:var(--gov)"></i>治理</span>
+          <span><i style="background:var(--config)"></i>配置</span> </div>
+        <div id="cardroot"><div class="laygroup"><h3><span class="lb" style="background:var(--mind)"></span><span>智能 · CPU</span> <span class="meta">1 concepts</span></h3><div class="cards"><article class="card card-mind" id="card-llm" data-id="llm"><h4><span class="desc-name">LLM</span><span class="badge">智能</span></h4><p class="where">位置:text, action = LLM(context, menu)</p><p class="desc">整段代码里 LLM 只占一行,且只做一件事,即任务决策:看着当前上下文和「可用功能菜单」,决定下一步做什么。它不管记忆、不调工具、不做权限,这些都是 harness 的事。要点:「只占一行」说的是任务决策这一行;压缩(compact)、记忆固化、子 agent 内部其实还会各自调用 LLM。案例:产品级 harness 里这些调用还常分给不同模型——主决策用强模型(如 Claude Code 用 Opus),而压缩摘要、危险动作的自动批准分类、子 agent 等辅助任务交给更小更快的模型(如 Haiku);可见「智能」这一层往往是一组分工的 LLM,而非单一模型。把一颗会胡思乱想的 CPU 包成一台能工作的计算机,正是 harness 的工作。</p></article></div></div><div class="laygroup"><h3><span class="lb" style="background:var(--ext)"></span><span>扩展与动作</span> <span class="meta">4 concepts</span></h3><div class="cards"><article class="card card-ext" id="card-skill" data-id="skill"><h4><span class="desc-name">Skill</span><span class="badge">扩展与动作</span></h4><p class="where">位置:register_skills() · H.skills.load()</p><p class="desc">一个 SKILL.md(描述 + 指令)。大脑根据描述自己判断该不该用(model-invoked),你不用写 if。妙在渐进式披露:平时只占一张「名片」(description)的上下文,命中了才把 SKILL.md 全文读进上下文,载入的是「指令文本」,不是去运行一个程序;它捆绑的脚本是随后由模型当作普通工具(call_tool)去执行的。这正是 Skill 与 Tool 的分界:Skill 是给大脑读的(提示空间),Tool 是给 harness 执行的(动作空间)。</p></article><article class="card card-ext" id="card-tool" data-id="tool"><h4><span class="desc-name">Tool 原语</span><span class="badge">扩展与动作</span></h4><p class="where">位置:register_builtin_tools() · H.sandbox.run()</p><p class="desc">工具调用是 agent 落地的最底层原语:读写文件、跑 bash、执行脚本。agent 的一切动作最终都 ground 在一个 tool call 上。MCP 只是「暴露工具的协议」,而 Tool 原语是协议运的货本身。顺带一提:代码里把 use_skill / spawn_subagent / take_note 拆成并列分支只为讲清楚;真实实现里它们也都是菜单里的工具:载入 Skill、派子 agent(Task 工具)、记笔记(memory 工具),最终都收敛成一次 tool call。</p></article><article class="card card-ext" id="card-mcp" data-id="mcp"><h4><span class="desc-name">MCP</span><span class="badge">扩展与动作</span></h4><p class="where">位置:connect_mcp_servers() · H.mcp.call()</p><p class="desc">Model Context Protocol,接外部工具的统一插口。工具方实现一次 MCP server,所有 agent 立刻都能调,接工具从 N×M 的私货变成 N+M 的公共品。它是 agent 世界的 USB / 驱动 ABI。一点边界:MCP 工具在外部执行,本地沙箱覆盖不到它的副作用,治理只能靠事前的 guardrail/审批与协议层信任。(MCP 已于 2025 年捐给 Linux 基金会旗下的 Agentic AI Foundation,OpenAI、Google、微软等均已加入;N+M 的论点不受影响、反而更强。)</p></article><article class="card card-ext" id="card-subagent" data-id="subagent"><h4><span class="desc-name">子 Agent / Isolate</span><span class="badge">扩展与动作</span></h4><p class="where">位置:spawn_subagent → agent_loop(subtask, child_H)</p><p class="desc">派发一个独立上下文的子 agent,本质就是递归调用 agent_loop 自己。子任务在隔离的上下文里跑完,只把「摘要」带回主流程,不污染主上下文。这是 CE 四件事里的 Isolate,也是多 agent 协作的基本形态。注意:递归写法只体现了「隔离」;子 agent 的另一半价值是「并行」,可同时 fan-out 多个。实践中子 agent 通常拿一个受限的 harness(不同提示词、工具子集、甚至更小的模型),并需设递归深度 / 总预算上限以防 fork 炸弹。</p></article></div></div><div class="laygroup"><h3><span class="lb" style="background:var(--info)"></span><span>信息 · CE</span> <span class="meta">4 concepts</span></h3><div class="cards"><article class="card card-info" id="card-ce" data-id="ce"><h4><span class="desc-name">CE 上下文工程</span><span class="badge">信息</span></h4><p class="where">位置:context = H.system_prompt + H.rules + …(开局装配那几行)</p><p class="desc">Context Engineering,组织「给大脑什么信息」,是 harness 与执行/扩展并列的另一半工作。四件核心操作:Write(写出去/读回来)、Select(检索)、Compress(压缩)、Isolate(拆分)。其中 Write 不止即时记笔记,也包括把结构化任务清单(如 Claude Code 的 TodoWrite)持续回注上下文,在长任务里维持目标方向、对抗偏题。若说 LLM 是 CPU,上下文窗口就是它的 RAM,而 CE 就是这台机器的内存管理。决定任务质量的,始终是放入上下文窗口的信息质量。</p></article><article class="card card-info" id="card-memory" data-id="memory"><h4><span class="desc-name">记忆 (Write)</span><span class="badge">信息</span></h4><p class="where">位置:H.memory.read / write(循环内) / consolidate(会话末)</p><p class="desc">LLM 每次对话从零开始,记忆是 harness 替它补的「跨会话长期记忆」。它有两个发生时机:循环内,大脑主动决定「这条值得记」时写 scratchpad;会话末,consolidate 把零散笔记固化成长期记忆。现代实现里,读和写常常都是模型自己调用的工具(read_memory / write_memory),而非全由 harness 代劳。对应 scratchpad(会话内) vs 长期记忆(跨会话)的区分。</p></article><article class="card card-info" id="card-rag" data-id="rag"><h4><span class="desc-name">RAG / Select</span><span class="badge">信息</span></h4><p class="where">位置:H.retriever.retrieve(goal)</p><p class="desc">Retrieval-Augmented Generation,把与当前任务相关的外部知识检索出来、纳入上下文,给模型事实锚点。它是 CE 四件事里的 Select:不是把所有信息放进去,而是只检索「这一步需要的恰到好处的信息」。检索有两个时机:开局一次性预检索(代码里这行),以及更现代的 just-in-time,模型在循环内用搜索/读文件工具按需取数(Claude Code 即用 glob/grep 即时检索),二者常混合使用。</p></article><article class="card card-info" id="card-entropy" data-id="entropy"><h4><span class="desc-name">熵管理 / Compress</span><span class="badge">信息</span></h4><p class="where">位置:compact(context)</p><p class="desc">上下文窗口会随多轮累积而膨胀、被无关内容稀释(上下文腐化)。熵管理在窗口将满时压缩 / 裁剪,保住高信号 token。它是 CE 四件事里的 Compress,主动的工程工作,而非被动等窗口被塞满。</p></article></div></div><div class="laygroup"><h3><span class="lb" style="background:var(--gov)"></span><span>治理</span> <span class="meta">5 concepts</span></h3><div class="cards"><article class="card card-gov" id="card-hooks" data-id="hooks"><h4><span class="desc-name">Hooks</span><span class="badge">治理</span></h4><p class="where">位置:register_hooks() · run_hooks(Pre/Post/SessionEnd)</p><p class="desc">绑定到生命周期事件(执行前 PreToolUse、执行后 PostToolUse、会话开始/结束)的脚本。它让某些检查「自动发生」而无需提示,就像 Git hooks,只不过是给 Agent 用的。它不止能旁观:PreToolUse 钩子可以返回 deny 直接拦下这次工具调用,所以它和 Guardrail 常是同一套闸的两种用法(一个「拦」,一个「触发」)。权限拦截、格式检查、密钥扫描常由 Hook 实现。</p></article><article class="card card-gov" id="card-sandbox" data-id="sandbox"><h4><span class="desc-name">架构约束 / Sandbox</span><span class="badge">治理</span></h4><p class="where">位置:create_sandbox() · H.sandbox.run()</p><p class="desc">给 Agent 的每一次执行加上隔离边界与资源上限(CPU、内存、超时、文件系统范围)。Sandbox 是「架构约束」最硬的一种:类型系统、目录边界、容器隔离,本质都是用结构限制 Agent 的行动空间,把风险关进笼子。</p></article><article class="card card-gov" id="card-trace" data-id="trace"><h4><span class="desc-name">可观测性 / Tracing</span><span class="badge">治理</span></h4><p class="where">位置:H.tracer.record(每轮) · H.tracer.flush(会话末)</p><p class="desc">记录 Agent 的每一步决策与动作,事后可回放、可审计、可调试。注意它的双节奏:record 在循环内每轮都跑,而且记的是「决策 + 观察结果」成对的轨迹,否则只剩决策、回放不出究竟发生了什么;flush 在会话末最终落盘。真实系统还会循环内增量落盘,否则中途崩溃就丢了整条决策链。此外,产品级 harness 常在每步对文件状态另做快照(如 git write-tree),工具失败时回滚到上一快照、防止仓库被改坏——这是与决策轨迹互补的「状态快照 / checkpoint」,OpenCode、Claude Code 都有。</p></article><article class="card card-gov" id="card-guardrail" data-id="guardrail"><h4><span class="desc-name">权限门控 / Guardrail</span><span class="badge">治理</span></h4><p class="where">位置:H.guardrail.allow(action)</p><p class="desc">在动作执行「之前」做策略检查,把危险动作先拦下来。高风险场景(删库、转账、对外发布)在这里停下,转人工审批(Human-in-the-Loop)。它和 Hooks 常是同一套机制的不同用法:Guardrail 是「拦」,Hooks 是「触发」。</p></article><article class="card card-gov" id="card-feedback" data-id="feedback"><h4><span class="desc-name">反馈循环</span><span class="badge">治理</span></h4><p class="where">位置:run_sensors(tests, lint, types, CI)</p><p class="desc">这是 Harness Engineering 的灵魂,它有两半。最基础的一半:工具调用本身失败时,把错误信息回灌进上下文,模型据此改换路径重试,失败结果同样是环境给的客观事实。更主动的一半:Agent 改完代码后自动跑测试 / Lint / 类型检查 / CI,把失败回灌、据此自我修正。传统软件工程二十年的质量门禁,在 Agent 时代获得第二个用途:不再只是给人的门禁,而是给机器的护栏(这一「机器护栏」的提法见 Kent Beck 关于 augmented coding 的论述)。案例:OpenCode 把 LSP 实时诊断作为最即时的反馈源——edit 一完成就立刻拿到类型 / 语法 / 未定义变量的报错并回灌,比跑完整测试更快闭合循环。</p></article></div></div><div class="laygroup"><h3><span class="lb" style="background:var(--config)"></span><span>配置</span> <span class="meta">1 concepts</span></h3><div class="cards"><article class="card card-config" id="card-rules" data-id="rules"><h4><span class="desc-name">规则文件</span><span class="badge">配置</span></h4><p class="where">位置:load_rule_files(CLAUDE.md, AGENTS.md)</p><p class="desc">CLAUDE.md / AGENTS.md,启动时自动加载进上下文的声明式约束。它把「每次都要叮嘱的话」(技术栈、代码风格、禁改目录)固化成文件、纳入版本控制。这是最轻的一层 harness,只能做声明式约束,做不了流程编排(那要上 Skill 或代码框架)。</p></article></div></div></div>
+      </section>
+      <!-- ===================== FLOW ===================== -->
+      <section class="block" id="flow-block">
+        <div class="eyebrow">Execution Timeline</div>
+        <h2>执行流程 · 谁跑一次,谁每轮都跑</h2>
+        <p class="lead">同一段代码,有的部分一次性执行,有的每轮循环都执行,有的等循环退出才执行一次。这张时间线把三种节
+          奏分清。</p>
+        <div class="flow">
+          <div class="stage s1"> <span class="tag">① 一次性</span>
+            <h4>启动装配 &nbsp;<code>build_agent()</code></h4>
+            <p>跑在 while 之前,只跑一次。把 harness 的零件登记好:规则文件、Skill 名片、内建工具、MCP
+              连接、Hooks、Sandbox、Tracer。其中 Skill、MCP、Hooks、命令、子 agent 这类可分发的扩展,可整包来自一个 Plugin。</p>
+          </div>
+          <div class="connector"><span class="arr">↓</span></div>
+          <div class="stage s2 loopwrap">
+            <div class="looparrow"></div>
+            <span class="tag">② 每轮重复</span>
+            <h4>while 主循环 &nbsp;<code>while not done and steps &lt; MAX_STEPS</code></h4>
+            <p>每一轮 = 一次 LLM 决策 + 一次动作执行。下面这些步骤每轮都重新走一遍:</p>
+            <div class="perstep"> <span>熵管理·压缩</span><span>列出功能菜单</span><span class="hot">LLM 任务决策(唯一一行)</span><span>决策入上下文</span><span>权
+                限守卫</span><span>分发:Skill / 工具 / 子Agent</span><span>Hooks
+                前后触发</span><span>记轨迹</span><span>反馈循环回灌</span> </div>
+          </div>
+          <div class="connector"><span class="arr">↓</span><span class="lbl">退出条件 = done==True(任务完成) 或 steps==MAX_STEPS(预算耗尽)</span></div>
+          <div class="stage s3"> <span class="tag">③ 退出后一次</span>
+            <h4>收尾 &nbsp;<code>memory.consolidate() · tracer.flush()</code></h4>
+            <p>循环退出后,跑且只跑一次:把循环内零散记下的笔记固化成长期记忆,把整条决策链最终落盘,返回答案。<b style="color:var(--paper)">注意:</b>这里的「记忆/落盘」各自还有一半发生在循环内
+              (即时记笔记、每轮记轨迹),收尾只是「会话末的固化」。</p>
+          </div>
+        </div>
+      </section>
+      <!-- ===================== CODA · LOOP ENGINEERING ===================== -->
+      <section class="block" id="coda-block">
+        <div class="eyebrow">Coda · Loop Engineering</div>
+        <h2>尾声 · 循环之上还有循环</h2>
+        <p class="lead">本页的 while 循环叫 agent loop,但 2026 年中的热词 <b>Loop Engineering</b>(Addy Osmani 命名)说的不是它,而是<b>循环之上</b>的那一层:到目前为止,goal 仍是人给的,人守在屏幕前等它返回。Loop Engineering 把这最后一环也工程化——谁启动循环、谁验收结果、谁决定下一轮做什么。Claude Code 负责人 Boris Cherny 的表述是:「I don't prompt Claude anymore. I have loops running that prompt Claude and figuring out what to do. My job is to write loops.」一点提醒:这个词 2026 年 6 月才诞生,内涵与边界仍在快速演变,Osmani 本人也明说仍持保留态度——把它当作「正在成形的概念」,而非定论。</p>
+        <div class="codewin">
+          <div class="titlebar"> <span class="tl r"></span><span class="tl y"></span><span class="tl g"></span> <span class="fname">outer_loop.pseudo</span> </div>
+          <pre class="code"><div class="ln"><span class="gut">1</span><span class="codetxt"><span class="t-com"># ---------- Loop Engineering:人退到循环之上 ----------</span></span></div><div class="ln"><span class="gut">2</span><span class="codetxt"><span class="t-kw">while</span> <span class="t-kw">True</span>:</span></div><div class="ln"><span class="gut">3</span><span class="codetxt">    goal   = <span class="t-fn">find_work</span>(backlog, issues, schedule)   <span class="t-com"># 系统自己找活:issue 队列 / 定时任务 / CI 事件,不再等人给 goal</span></span></div><div class="ln"><span class="gut">4</span><span class="codetxt">    H      = <span class="t-fn">build_agent</span>(project)                   <span class="t-com"># 每个任务装配一次 harness:即本页 ① 启动装配</span></span></div><div class="ln star"><span class="gut">5</span><span class="codetxt">    answer = <span class="t-fn-llm">agent_loop</span>(goal, H)                    <span class="t-com"># 本页讲的全部内容,在这里只占一行</span><span class="starflag">★ 整页 = 这一行</span></span></div><div class="ln"><span class="gut">6</span><span class="codetxt">    <span class="t-fn">verify_and_record</span>(answer, external_state)       <span class="t-com"># 客观验收(测试 / CI),写回外部状态,决定下一轮</span></span></div><div class="ln"><span class="gut">7</span><span class="codetxt"> </span></div><div class="ln"><span class="gut">8</span><span class="codetxt"><span class="t-com"># ⚠ 注意:以上是教学用的极端简化版。真实的外层循环至少还需要:</span></span></div><div class="ln"><span class="gut">9</span><span class="codetxt"><span class="t-com">#   ① 预算与停机守卫(内循环有 MAX_STEPS,外循环同样不能裸奔)   ② verify 连续失败 N 次后 escalate_to_human,升级给人</span></span></div><div class="ln"><span class="gut">10</span><span class="codetxt"><span class="t-com">#   ③ 多 agent 并行时用 worktree 隔离工作区,防文件冲突   ④ goal 与进度写回外部状态(issue / STATE 文件):agent 会忘,repo 不会</span></span></div></pre>
+        </div>
+        <div class="stepnote">
+          <h4><span class="sn-dot" style="background:var(--bronze)"></span><span class="sn-step">Harness × Loop</span>两层分工,一个公式</h4>
+          <ul>
+            <li><b style="color:var(--paper)">Harness Engineering(本页全部内容)</b>回答空间问题:任意一个瞬间,模型周围有什么——工具、沙箱、权限门控、反馈传感器、可观测性。它决定循环体内每一行「能做什么、被什么拦着」。</li>
+            <li><b style="color:var(--paper)">Loop Engineering(上面六行)</b>回答时间问题:圈与圈之间如何演进——谁触发循环、用什么客观信号验收、何时停机、失败后是重试还是升级给人。它决定这些行「以什么控制流被反复执行」。注意别与本页的 agent loop 混为一谈:agent loop 是循环体本身,loop engineering 是循环之上的编排。</li>
+            <li>谱系:Prompt Engineering (2023) → Context Engineering (2025) → Harness Engineering (2026.2) → Loop Engineering (2026.6)。公式分两层写更稳:<b style="color:var(--paper)">单次 Agent = Model × Harness;长驻 Agentic System = Agent + Outer Loop</b>。本页开头那句「LLM 只占一行」在外层同构地再现:整个 agent_loop 也只占一行——你以为它是主程序,其实它是别人循环体里的一行。</li>
+          </ul>
+        </div>
+      </section>
+      <footer>
+        <p class="takeaway">大脑只做一行任务决策,其余全是工程。<span class="hl">裸 LLM
+            是一块发烫的硅;harness 把它变成一台计算机;MCP 与 Plugin 再把这台计算机变成一个生态;而 loop engineering 让这台计算机自己开机干活。</span></p>
+        <p>&nbsp;· 南京大学软件学院 邵栋 <br>
+        </p>
+      </footer>
+    </div>
+    <div id="tip">
+      <div class="tname"></div>
+      <div class="twhere"></div>
+      <div class="tbody"></div>
+    </div>
+    <script>
+    /* ---------- 源伪代码(逐行高亮) ---------- */
+    const CODE = `# ---------- ① 启动装配:跑在 while 之前,一次性 ----------
+function build_agent(project):
+    system_prompt = vendor_system_prompt()  # 厂商内建、你无法修改的“骨架”那部分上下文:产品级 harness 的核心
+    rules     = load_rule_files("CLAUDE.md", "AGENTS.md") # 【规则文件】启动自动加载的声明式约束(你来填的内容物)
+    skills    = register_skills()        # 【Skill】只登记“名片”(description),不载全文
+    tools     = register_builtin_tools() # 【Tool 原语】读写文件/跑 bash……agent 最底层的动作
+    mcp       = connect_mcp_servers()    # 【MCP】把外部工具按统一协议接进来(N+M,不为每个工具改代码)
+    hooks     = register_hooks()         # 【Hooks】绑到生命周期事件上的脚本
+    guardrail = register_guardrail()     # 【权限门控/Guardrail】危险动作的策略闸:产品级 harness 最显眼的部件
+    sandbox   = create_sandbox(limits)   # 【架构约束/Sandbox】给一切执行加上隔离与资源上限
+    tracer    = open_trace()             # 【可观测性】记录每一步,事后可回放
+    memory    = open_memory()            # 【记忆 (Write)】跨会话长期记忆的读写口
+    retriever = open_retriever()         # 【RAG / Select】按需把外部知识检索进上下文
+    return Harness(system_prompt, rules, skills, tools, mcp,
+                   hooks, guardrail, sandbox, tracer, memory, retriever)
+
+
+# ---------- ② 主体:整个函数体 = harness;LLM 只占其中一行 ----------
+function agent_loop(goal, H, depth=0):  # H = 装配好的 harness;depth 给子 agent 防递归过深
+    # 【CE 上下文工程】组织“提供给大脑的信息”,这是 harness 的另一半工作
+    context  = H.system_prompt           # 骨架:厂商内建的系统提示词(范式A 最好的代码级例子,你无法修改)
+    context += H.rules                   # 内容物:你在 CLAUDE.md 里填的那部分
+    context += H.memory.read(goal)       # 【CE-读记忆】跨会话长期记忆(现代实现里读/写常是模型自己调的工具)
+    context += H.retriever.retrieve(goal)# 【CE-Select/RAG】开局先检索一批相关知识(预检索)
+    context += goal
+    # 注:除开局预检索,菜单里还放了 search / read_file / memory 等工具,
+    #     让模型在循环内按需取数(just-in-time),而非一次性全部放入
+
+    done   = False
+    answer = None
+    steps  = 0
+    while not done and steps < MAX_STEPS:   # guard:除最大轮数,真实系统还设超时/费用预算/重复调用检测
+        steps += 1
+
+        if token_count(context) > LIMIT:
+            context = compact(context)  # 【熵管理 / CE-Compress】窗口将满则压缩(这步本身也常是一次 LLM 调用)
+
+        # 把“可用功能菜单”提供给大脑:内建工具 + MCP 工具 + Skill 名片(真实系统还含 search/memory 等工具)
+        menu = H.tools.list() + H.mcp.list_tools() + H.skills.list_descriptions()
+
+        # ========================================================
+        text, action = LLM(context, menu)  # ← LLM 唯一一行做“任务决策”:只负责“想下一步”
+        # 注:多数语言里函数只返回“一个”对象/值,这行返回的其实就是那一个“响应对象”,等号左边把它就地拆成 text(说什么) 和 action(做什么) 两半
+        # ========================================================
+        context += message("assistant", [text, action])  # 关键:把模型这一整轮(它说的 text + 它发起的 action)打包成一条 assistant 消息写回历史,下一轮它才看得见自己说过/做过什么
+        H.tracer.record(text, action)   # 【可观测性·循环内】每轮记下整轮(说什么+做什么);真实系统还把下面的观察结果一并记入,凑成(决策,观察)对
+
+        if action.type == "done":
+            done   = True
+            answer = text               # 停下:最终答案就是模型这轮的输出(“无工具调用即停”是另一派等价写法)
+            continue
+
+        if not H.guardrail.allow(action):                 # 【权限门控/Guardrail】危险动作先拦
+            context += message("user", "该动作被策略拦截"); continue   # 高风险时在此停下等人工审批(HITL)
+
+        verdict = run_hooks(H.hooks, "PreToolUse", action) # 【Hooks】执行前触发;PreToolUse 也能返回 deny 拦截
+        if verdict == "deny":                              #   可见 Guardrail 与 Hooks 实为同一套闸的两种用法
+            context += message("user", "被 Hook 拦截"); continue
+
+        if action.type == "use_skill":
+            instructions = H.skills.load(action.name)     # 【Skill 渐进式披露】命中才把 SKILL.md 全文读进上下文
+            context += message("user", instructions)   # 载入的 SKILL.md 全文作为 user 消息进上下文(读入指令文本而非运行;脚本随后走 call_tool)
+
+        elif action.type == "call_tool":                  # 区分:工具从哪来
+            try:
+                if action.tool in H.mcp:
+                    result = H.mcp.call(action.tool, action.args)  # 【MCP】走协议(在外部执行,本地沙箱覆盖不到)
+                else:
+                    result = H.sandbox.run(H.tools[action.tool], action.args)  # 【Tool 原语】内建工具
+            except ToolError as e:
+                result = "工具失败:" + e.message           # 失败也是客观事实:错误回灌,模型据此改换路径重试
+            context += message("user", result)   # 工具结果作为一条 user 消息回灌(assistant 说/做 ↔ user 返回结果,一来一回)
+
+        elif action.type == "spawn_subagent":             # 【子 Agent / CE-Isolate】
+            if depth >= MAX_DEPTH:                         #   用上 depth:再嵌一层就太深,直接拒绝,防递归过深 / fork 炸弹
+                context += message("user", "子 agent 嵌套已达深度上限,拒绝派发"); continue
+            child_H  = H.restrict(action.scope)           #   子 agent 通常拿“受限 harness”:别的提示词 / 工具子集 / 更小模型
+            summary  = agent_loop(action.subtask, child_H, depth + 1)  #   开独立上下文递归自己,也可并行 fan-out 多个
+            context += message("user", summary)   # 只把“摘要”作为一条 user 消息带回,不污染主上下文
+
+        elif action.type == "take_note":
+            H.memory.write(action.note)                   # 【CE-Write·循环内】大脑主动记笔记(scratchpad)
+
+        run_hooks(H.hooks, "PostToolUse", action)         # 【Hooks】执行后触发
+
+        if action.changed_code:                           # 【反馈循环】HE 的灵魂:让“机器护栏”
+            report   = run_sensors(tests, lint, types, CI)#   告诉 agent 它做错没:测试/Lint/类型/CI
+            context += message("user", report)   # 失败信息作为一条 user 消息回灌,agent 据此自我修正
+
+    # ---------- ③ 收尾:循环退出后,跑且只跑一次 ----------
+    # 触发时机 = done==True(任务完成)  或  steps==MAX_STEPS(预算耗尽)
+    run_hooks(H.hooks, "SessionEnd", None)  # 【Hooks】会话结束事件:装配时注册,这里才触发
+    H.memory.consolidate(context)       # 【CE-Write·会话末】把零散笔记固化成长期记忆
+    H.tracer.flush()                    # 【可观测性·会话末】最终落盘
+    return answer`;
+
+    /* ---------- 分步代码:从裸循环逐层叠加到完整 harness;第 6 步即上面的完整 CODE ---------- */
+    const STEP_TITLES = ["裸循环", "加工具", "上下文工程", "治理与安全", "扩展与协作", "反馈闭环"];
+    const STEP_LAYERS = ["mind", "ext", "info", "gov", "ext", "gov"];
+    const STEPS = [
+      `# 最简循环:此刻只有大脑在转,还没有任何 harness
+function agent_loop(goal):
+    context = [goal]                      # 提供给大脑的全部信息,目前只有任务本身
+    while True:
+        text = LLM(context)               # 大脑唯一的工作:看上下文,决定这一步说什么
+        context += message("assistant", text)   # 把回复追加进历史,下一轮它才记得自己说过什么
+        if looks_done(text):              # 粗糙的判停:文本里像是说完了,就停下
+            return text`,
+      `# 加入“动作”:大脑现在不只是说话,还能调用工具去改变世界
+function agent_loop(goal):
+    context = [goal]                      # 提供给大脑的全部信息,目前只有任务本身
+    tools = register_builtin_tools()      # 【Tool 原语】读写文件 / 跑 bash,agent 能动手的最底层原语
+    while True:
+        text, action = LLM(context, tools)   # 大脑还要决定“做什么”:返回 (说什么 text, 做什么 action)
+        context += message("assistant", [text, action])
+        if action.type == "done":         # 用一个显式动作表示完成,而不是去猜文本
+            return text
+        if action.type == "call_tool":
+            result = run_tool(tools[action.tool], action.args)   # 真正去执行这次工具调用
+            context += message("user", result)   # 把结果作为 user 消息回灌,一来(assistant)一回(user)就是 agent 的节拍`,
+      `# ---------- ① 启动装配:跑在 while 之前,一次性 ----------
+function build_agent(project):
+    system_prompt = vendor_system_prompt()  # 厂商内建、你无法修改的“骨架”那部分上下文:产品级 harness 的核心
+    rules     = load_rule_files("CLAUDE.md", "AGENTS.md") # 【规则文件】启动自动加载的声明式约束(你来填的内容物)
+    tools     = register_builtin_tools() # 【Tool 原语】读写文件/跑 bash……agent 最底层的动作
+    memory    = open_memory()            # 【记忆 (Write)】跨会话长期记忆的读写口
+    retriever = open_retriever()         # 【RAG / Select】按需把外部知识检索进上下文
+    return Harness(system_prompt, rules, tools, memory, retriever)
+
+
+# ---------- ② 主体:整个函数体 = harness;LLM 只占其中一行 ----------
+function agent_loop(goal, H):
+    # 【CE 上下文工程】组织“提供给大脑的信息”,这是 harness 的另一半工作
+    context  = H.system_prompt           # 骨架:厂商内建的系统提示词(范式A 最好的代码级例子,你无法修改)
+    context += H.rules                   # 内容物:你在 CLAUDE.md 里填的那部分
+    context += H.memory.read(goal)       # 【CE-读记忆】跨会话长期记忆(现代实现里读/写常是模型自己调的工具)
+    context += H.retriever.retrieve(goal)# 【CE-Select/RAG】开局先检索一批相关知识(预检索)
+    context += goal
+
+    done   = False
+    answer = None
+    steps  = 0
+    while not done and steps < MAX_STEPS:   # guard:除最大轮数,真实系统还设超时/费用预算/重复调用检测
+        steps += 1
+
+        if token_count(context) > LIMIT:
+            context = compact(context)  # 【熵管理 / CE-Compress】窗口将满则压缩(这步本身也常是一次 LLM 调用)
+
+        menu = H.tools.list()   # 把“可用功能菜单”提供给大脑(此刻只有内建工具)
+
+        # ========================================================
+        text, action = LLM(context, menu)  # ← LLM 唯一一行做“任务决策”:只负责“想下一步”
+        # 注:多数语言里函数只返回“一个”对象/值,这行返回的其实就是那一个“响应对象”,等号左边把它就地拆成 text(说什么) 和 action(做什么) 两半
+        # ========================================================
+        context += message("assistant", [text, action])  # 关键:把模型这一整轮(它说的 text + 它发起的 action)打包成一条 assistant 消息写回历史,下一轮它才看得见自己说过/做过什么
+
+        if action.type == "done":
+            done   = True
+            answer = text               # 停下:最终答案就是模型这轮的输出(“无工具调用即停”是另一派等价写法)
+            continue
+
+        if action.type == "call_tool":
+            result = run_tool(H.tools[action.tool], action.args)  # 执行工具(下一步会给它加上沙箱)
+            context += message("user", result)   # 工具结果作为一条 user 消息回灌(assistant 说/做 ↔ user 返回结果,一来一回)
+
+        elif action.type == "take_note":
+            H.memory.write(action.note)                   # 【CE-Write·循环内】大脑主动记笔记(scratchpad)
+
+    # ---------- ③ 收尾:循环退出后,跑且只跑一次 ----------
+    H.memory.consolidate(context)       # 【CE-Write·会话末】把零散笔记固化成长期记忆
+    return answer`,
+      `# ---------- ① 启动装配:跑在 while 之前,一次性 ----------
+function build_agent(project):
+    system_prompt = vendor_system_prompt()  # 厂商内建、你无法修改的“骨架”那部分上下文:产品级 harness 的核心
+    rules     = load_rule_files("CLAUDE.md", "AGENTS.md") # 【规则文件】启动自动加载的声明式约束(你来填的内容物)
+    tools     = register_builtin_tools() # 【Tool 原语】读写文件/跑 bash……agent 最底层的动作
+    hooks     = register_hooks()         # 【Hooks】绑到生命周期事件上的脚本
+    guardrail = register_guardrail()     # 【权限门控/Guardrail】危险动作的策略闸:产品级 harness 最显眼的部件
+    sandbox   = create_sandbox(limits)   # 【架构约束/Sandbox】给一切执行加上隔离与资源上限
+    tracer    = open_trace()             # 【可观测性】记录每一步,事后可回放
+    memory    = open_memory()            # 【记忆 (Write)】跨会话长期记忆的读写口
+    retriever = open_retriever()         # 【RAG / Select】按需把外部知识检索进上下文
+    return Harness(system_prompt, rules, tools,
+                   hooks, guardrail, sandbox, tracer, memory, retriever)
+
+
+# ---------- ② 主体:整个函数体 = harness;LLM 只占其中一行 ----------
+function agent_loop(goal, H):
+    # 【CE 上下文工程】组织“提供给大脑的信息”,这是 harness 的另一半工作
+    context  = H.system_prompt           # 骨架:厂商内建的系统提示词(范式A 最好的代码级例子,你无法修改)
+    context += H.rules                   # 内容物:你在 CLAUDE.md 里填的那部分
+    context += H.memory.read(goal)       # 【CE-读记忆】跨会话长期记忆(现代实现里读/写常是模型自己调的工具)
+    context += H.retriever.retrieve(goal)# 【CE-Select/RAG】开局先检索一批相关知识(预检索)
+    context += goal
+
+    done   = False
+    answer = None
+    steps  = 0
+    while not done and steps < MAX_STEPS:   # guard:除最大轮数,真实系统还设超时/费用预算/重复调用检测
+        steps += 1
+
+        if token_count(context) > LIMIT:
+            context = compact(context)  # 【熵管理 / CE-Compress】窗口将满则压缩(这步本身也常是一次 LLM 调用)
+
+        menu = H.tools.list()   # 把“可用功能菜单”提供给大脑(此刻只有内建工具)
+
+        # ========================================================
+        text, action = LLM(context, menu)  # ← LLM 唯一一行做“任务决策”:只负责“想下一步”
+        # 注:多数语言里函数只返回“一个”对象/值,这行返回的其实就是那一个“响应对象”,等号左边把它就地拆成 text(说什么) 和 action(做什么) 两半
+        # ========================================================
+        context += message("assistant", [text, action])  # 关键:把模型这一整轮(它说的 text + 它发起的 action)打包成一条 assistant 消息写回历史,下一轮它才看得见自己说过/做过什么
+        H.tracer.record(text, action)   # 【可观测性·循环内】每轮记下整轮(说什么+做什么);真实系统还把下面的观察结果一并记入,凑成(决策,观察)对
+
+        if action.type == "done":
+            done   = True
+            answer = text               # 停下:最终答案就是模型这轮的输出(“无工具调用即停”是另一派等价写法)
+            continue
+
+        if not H.guardrail.allow(action):                 # 【权限门控/Guardrail】危险动作先拦
+            context += message("user", "该动作被策略拦截"); continue   # 高风险时在此停下等人工审批(HITL)
+
+        verdict = run_hooks(H.hooks, "PreToolUse", action) # 【Hooks】执行前触发;PreToolUse 也能返回 deny 拦截
+        if verdict == "deny":                              #   可见 Guardrail 与 Hooks 实为同一套闸的两种用法
+            context += message("user", "被 Hook 拦截"); continue
+
+        if action.type == "call_tool":
+            result = H.sandbox.run(H.tools[action.tool], action.args)  # 【Tool 原语】内建工具(在沙箱内执行)
+            context += message("user", result)   # 工具结果作为一条 user 消息回灌(assistant 说/做 ↔ user 返回结果,一来一回)
+
+        elif action.type == "take_note":
+            H.memory.write(action.note)                   # 【CE-Write·循环内】大脑主动记笔记(scratchpad)
+
+        run_hooks(H.hooks, "PostToolUse", action)         # 【Hooks】执行后触发
+
+    # ---------- ③ 收尾:循环退出后,跑且只跑一次 ----------
+    # 触发时机 = done==True(任务完成)  或  steps==MAX_STEPS(预算耗尽)
+    run_hooks(H.hooks, "SessionEnd", None)  # 【Hooks】会话结束事件:装配时注册,这里才触发
+    H.memory.consolidate(context)       # 【CE-Write·会话末】把零散笔记固化成长期记忆
+    H.tracer.flush()                    # 【可观测性·会话末】最终落盘
+    return answer`,
+      `# ---------- ① 启动装配:跑在 while 之前,一次性 ----------
+function build_agent(project):
+    system_prompt = vendor_system_prompt()  # 厂商内建、你无法修改的“骨架”那部分上下文:产品级 harness 的核心
+    rules     = load_rule_files("CLAUDE.md", "AGENTS.md") # 【规则文件】启动自动加载的声明式约束(你来填的内容物)
+    skills    = register_skills()        # 【Skill】只登记“名片”(description),不载全文
+    tools     = register_builtin_tools() # 【Tool 原语】读写文件/跑 bash……agent 最底层的动作
+    mcp       = connect_mcp_servers()    # 【MCP】把外部工具按统一协议接进来(N+M,不为每个工具改代码)
+    hooks     = register_hooks()         # 【Hooks】绑到生命周期事件上的脚本
+    guardrail = register_guardrail()     # 【权限门控/Guardrail】危险动作的策略闸:产品级 harness 最显眼的部件
+    sandbox   = create_sandbox(limits)   # 【架构约束/Sandbox】给一切执行加上隔离与资源上限
+    tracer    = open_trace()             # 【可观测性】记录每一步,事后可回放
+    memory    = open_memory()            # 【记忆 (Write)】跨会话长期记忆的读写口
+    retriever = open_retriever()         # 【RAG / Select】按需把外部知识检索进上下文
+    return Harness(system_prompt, rules, skills, tools, mcp,
+                   hooks, guardrail, sandbox, tracer, memory, retriever)
+
+
+# ---------- ② 主体:整个函数体 = harness;LLM 只占其中一行 ----------
+function agent_loop(goal, H, depth=0):  # H = 装配好的 harness;depth 给子 agent 防递归过深
+    # 【CE 上下文工程】组织“提供给大脑的信息”,这是 harness 的另一半工作
+    context  = H.system_prompt           # 骨架:厂商内建的系统提示词(范式A 最好的代码级例子,你无法修改)
+    context += H.rules                   # 内容物:你在 CLAUDE.md 里填的那部分
+    context += H.memory.read(goal)       # 【CE-读记忆】跨会话长期记忆(现代实现里读/写常是模型自己调的工具)
+    context += H.retriever.retrieve(goal)# 【CE-Select/RAG】开局先检索一批相关知识(预检索)
+    context += goal
+    # 注:除开局预检索,菜单里还放了 search / read_file / memory 等工具,
+    #     让模型在循环内按需取数(just-in-time),而非一次性全部放入
+
+    done   = False
+    answer = None
+    steps  = 0
+    while not done and steps < MAX_STEPS:   # guard:除最大轮数,真实系统还设超时/费用预算/重复调用检测
+        steps += 1
+
+        if token_count(context) > LIMIT:
+            context = compact(context)  # 【熵管理 / CE-Compress】窗口将满则压缩(这步本身也常是一次 LLM 调用)
+
+        # 把“可用功能菜单”提供给大脑:内建工具 + MCP 工具 + Skill 名片(真实系统还含 search/memory 等工具)
+        menu = H.tools.list() + H.mcp.list_tools() + H.skills.list_descriptions()
+
+        # ========================================================
+        text, action = LLM(context, menu)  # ← LLM 唯一一行做“任务决策”:只负责“想下一步”
+        # 注:多数语言里函数只返回“一个”对象/值,这行返回的其实就是那一个“响应对象”,等号左边把它就地拆成 text(说什么) 和 action(做什么) 两半
+        # ========================================================
+        context += message("assistant", [text, action])  # 关键:把模型这一整轮(它说的 text + 它发起的 action)打包成一条 assistant 消息写回历史,下一轮它才看得见自己说过/做过什么
+        H.tracer.record(text, action)   # 【可观测性·循环内】每轮记下整轮(说什么+做什么);真实系统还把下面的观察结果一并记入,凑成(决策,观察)对
+
+        if action.type == "done":
+            done   = True
+            answer = text               # 停下:最终答案就是模型这轮的输出(“无工具调用即停”是另一派等价写法)
+            continue
+
+        if not H.guardrail.allow(action):                 # 【权限门控/Guardrail】危险动作先拦
+            context += message("user", "该动作被策略拦截"); continue   # 高风险时在此停下等人工审批(HITL)
+
+        verdict = run_hooks(H.hooks, "PreToolUse", action) # 【Hooks】执行前触发;PreToolUse 也能返回 deny 拦截
+        if verdict == "deny":                              #   可见 Guardrail 与 Hooks 实为同一套闸的两种用法
+            context += message("user", "被 Hook 拦截"); continue
+
+        if action.type == "use_skill":
+            instructions = H.skills.load(action.name)     # 【Skill 渐进式披露】命中才把 SKILL.md 全文读进上下文
+            context += message("user", instructions)   # 载入的 SKILL.md 全文作为 user 消息进上下文(读入指令文本而非运行;脚本随后走 call_tool)
+
+        elif action.type == "call_tool":                  # 区分:工具从哪来
+            if action.tool in H.mcp:
+                result = H.mcp.call(action.tool, action.args)  # 【MCP】走协议(在外部执行,本地沙箱覆盖不到)
+            else:
+                result = H.sandbox.run(H.tools[action.tool], action.args)  # 【Tool 原语】内建工具
+            context += message("user", result)   # 工具结果作为一条 user 消息回灌(assistant 说/做 ↔ user 返回结果,一来一回)
+
+        elif action.type == "spawn_subagent":             # 【子 Agent / CE-Isolate】
+            if depth >= MAX_DEPTH:                         #   用上 depth:再嵌一层就太深,直接拒绝,防递归过深 / fork 炸弹
+                context += message("user", "子 agent 嵌套已达深度上限,拒绝派发"); continue
+            child_H  = H.restrict(action.scope)           #   子 agent 通常拿“受限 harness”:别的提示词 / 工具子集 / 更小模型
+            summary  = agent_loop(action.subtask, child_H, depth + 1)  #   开独立上下文递归自己,也可并行 fan-out 多个
+            context += message("user", summary)   # 只把“摘要”作为一条 user 消息带回,不污染主上下文
+
+        elif action.type == "take_note":
+            H.memory.write(action.note)                   # 【CE-Write·循环内】大脑主动记笔记(scratchpad)
+
+        run_hooks(H.hooks, "PostToolUse", action)         # 【Hooks】执行后触发
+
+    # ---------- ③ 收尾:循环退出后,跑且只跑一次 ----------
+    # 触发时机 = done==True(任务完成)  或  steps==MAX_STEPS(预算耗尽)
+    run_hooks(H.hooks, "SessionEnd", None)  # 【Hooks】会话结束事件:装配时注册,这里才触发
+    H.memory.consolidate(context)       # 【CE-Write·会话末】把零散笔记固化成长期记忆
+    H.tracer.flush()                    # 【可观测性·会话末】最终落盘
+    return answer`,
+      CODE
+    ];
+    const STEP_NOTES = [
+      [
+        `agent 的心脏就是一个 while 循环:把对话历史 context 提供给 LLM,它产出下一句,追加回历史,再进入下一轮。`,
+        `此刻大脑只会“说”(text),还不能“做”:没有工具、没有记忆、没有治理,纯粹是个会应答的循环。`,
+        `context 是它唯一的记忆:不把回复写回历史,下一轮它就忘了自己说过什么。`
+      ],
+      [
+        `LLM 的返回从“只有 text”变成“(text, action)”:既说话,又决定下一步做什么动作。`,
+        `call_tool 分支真正执行工具,再把结果作为 user 消息回灌,assistant 说/做、user 返回结果,这一来一回就是 agent loop 的基本节拍。`,
+        `done 也变成一个显式动作,而不是去猜文本说完没。能调工具改变世界、再读回结果,正是 agent 区别于 chatbot 的分水岭。`
+      ],
+      [
+        `零件变多了,于是把它们抽进 build_agent、打包成一个 harness 对象 H,harness 不是天生的,是这样“长”出来的。`,
+        `开局认真装配 context:系统提示词 + 规则文件 + 跨会话记忆 + RAG 检索。喂什么给大脑,直接决定任务质量,这是 harness 的另一半工作。`,
+        `compact 在窗口将满时压缩历史(熵管理 / Compress),take_note 让大脑主动记笔记。注意:这里的“压缩”和第 5 步子 agent 带回的“摘要”是两回事。`,
+        `while 也加上了 MAX_STEPS 预算上限,别让循环失控。`
+      ],
+      [
+        `guardrail 在动作执行“之前”拦截危险操作(删库 / 转账 / 对外发布),高风险时停下转人工审批(HITL)。`,
+        `Hooks 绑在生命周期事件上(PreToolUse / PostToolUse / SessionEnd);PreToolUse 也能返回 deny,可见 Guardrail 与 Hooks 是同一套闸的两种用法:一个“拦”,一个“触发”。`,
+        `sandbox 给每次执行加上隔离与资源上限;tracer 记录每一步,事后可回放、可审计。这一层让 agent 从“能工作”变成“能安全地工作”。`
+      ],
+      [
+        `Skill 是给大脑读的“功能包”:平时只占一张名片(description),命中了才把 SKILL.md 全文读进上下文(渐进式披露)。`,
+        `MCP 把外部工具按统一协议接进来,菜单从“只有内建工具”扩展到“内建 + MCP + Skill 名片”。`,
+        `spawn_subagent 开一个隔离上下文的子 agent,本质是递归调用 agent_loop 自己,只把摘要带回主流程;MAX_DEPTH 守卫给递归设防,防 fork 炸弹。`
+      ],
+      [
+        `工具调用包进 try/except:失败信息也回灌进上下文,失败同样是环境给的客观事实,模型据此换条路重试。`,
+        `改了代码就自动跑 run_sensors(测试 / Lint / 类型 / CI),把结果回灌、据此自我修正。这是 Harness Engineering 的灵魂:让机器护栏告诉 agent 做错没。`,
+        `至此完整 harness 成型,LLM 始终只占决策那一行,其余全是工程。这正是本页开头那句话的代码证明。`
+      ]
+    ];
+
+    /* ---------- 概念数据(卡片 + 悬停简介 + 标注查找) ---------- */
+    const DEFS = [
+      {
+        id: "llm", layer: "mind", name: "LLM", where: "位置:text, action = LLM(context, menu)",
+        tip: "唯一一行做「任务决策」。它是 CPU,只负责「想下一步」。",
+        desc: "整段代码里 LLM 只占一行,且只做一件事,即任务决策:看着当前上下文和「可用功能菜单」,决定下一步做什么。它不管记忆、不调工具、不做权限,这些都是 harness 的事。要点:「只占一行」说的是任务决策这一行;压缩(compact)、记忆固化、子 agent 内部其实还会各自调用 LLM。案例:产品级 harness 里这些调用还常分给不同模型——主决策用强模型(如 Claude Code 用 Opus),而压缩摘要、危险动作的自动批准分类、子 agent 等辅助任务交给更小更快的模型(如 Haiku);可见「智能」这一层往往是一组分工的 LLM,而非单一模型。把一颗会胡思乱想的 CPU 包成一台能工作的计算机,正是 harness 的工作。"
+      },
+
+      {
+        id: "skill", layer: "ext", name: "Skill", where: "位置:register_skills() · H.skills.load()",
+        tip: "模型自主调用的「功能包」,渐进式披露。",
+        desc: "一个 SKILL.md(描述 + 指令)。大脑根据描述自己判断该不该用(model-invoked),你不用写 if。妙在渐进式披露:平时只占一张「名片」(description)的上下文,命中了才把 SKILL.md 全文读进上下文,载入的是「指令文本」,不是去运行一个程序;它捆绑的脚本是随后由模型当作普通工具(call_tool)去执行的。这正是 Skill 与 Tool 的分界:Skill 是给大脑读的(提示空间),Tool 是给 harness 执行的(动作空间)。"
+      },
+      {
+        id: "tool", layer: "ext", name: "Tool 原语", where: "位置:register_builtin_tools() · H.sandbox.run()",
+        tip: "agent 最底层的动作:读写文件、跑 bash。",
+        desc: "工具调用是 agent 落地的最底层原语:读写文件、跑 bash、执行脚本。agent 的一切动作最终都 ground 在一个 tool call 上。MCP 只是「暴露工具的协议」,而 Tool 原语是协议运的货本身。顺带一提:代码里把 use_skill / spawn_subagent / take_note 拆成并列分支只为讲清楚;真实实现里它们也都是菜单里的工具:载入 Skill、派子 agent(Task 工具)、记笔记(memory 工具),最终都收敛成一次 tool call。"
+      },
+      {
+        id: "mcp", layer: "ext", name: "MCP", where: "位置:connect_mcp_servers() · H.mcp.call()",
+        tip: "接外部工具的统一协议,把 N×M 压成 N+M。",
+        desc: "Model Context Protocol,接外部工具的统一插口。工具方实现一次 MCP server,所有 agent 立刻都能调,接工具从 N×M 的私货变成 N+M 的公共品。它是 agent 世界的 USB / 驱动 ABI。一点边界:MCP 工具在外部执行,本地沙箱覆盖不到它的副作用,治理只能靠事前的 guardrail/审批与协议层信任。(MCP 已于 2025 年捐给 Linux 基金会旗下的 Agentic AI Foundation,OpenAI、Google、微软等均已加入;N+M 的论点不受影响、反而更强。)"
+      },
+      {
+        id: "subagent", layer: "ext", name: "子 Agent / Isolate", where: "位置:spawn_subagent → agent_loop(subtask, child_H)",
+        tip: "开独立上下文的子 agent = 递归调用自己。",
+        desc: "派发一个独立上下文的子 agent,本质就是递归调用 agent_loop 自己。子任务在隔离的上下文里跑完,只把「摘要」带回主流程,不污染主上下文。这是 CE 四件事里的 Isolate,也是多 agent 协作的基本形态。注意:递归写法只体现了「隔离」;子 agent 的另一半价值是「并行」,可同时 fan-out 多个。实践中子 agent 通常拿一个受限的 harness(不同提示词、工具子集、甚至更小的模型),并需设递归深度 / 总预算上限以防 fork 炸弹。"
+      },
+
+      {
+        id: "hooks", layer: "gov", name: "Hooks", where: "位置:register_hooks() · run_hooks(Pre/Post/SessionEnd)",
+        tip: "绑在生命周期事件上的脚本,事件触发的护栏。",
+        desc: "绑定到生命周期事件(执行前 PreToolUse、执行后 PostToolUse、会话开始/结束)的脚本。它让某些检查「自动发生」而无需提示,就像 Git hooks,只不过是给 Agent 用的。它不止能旁观:PreToolUse 钩子可以返回 deny 直接拦下这次工具调用,所以它和 Guardrail 常是同一套闸的两种用法(一个「拦」,一个「触发」)。权限拦截、格式检查、密钥扫描常由 Hook 实现。"
+      },
+      {
+        id: "sandbox", layer: "gov", name: "架构约束 / Sandbox", where: "位置:create_sandbox() · H.sandbox.run()",
+        tip: "给一切执行加上隔离与资源上限。",
+        desc: "给 Agent 的每一次执行加上隔离边界与资源上限(CPU、内存、超时、文件系统范围)。Sandbox 是「架构约束」最硬的一种:类型系统、目录边界、容器隔离,本质都是用结构限制 Agent 的行动空间,把风险关进笼子。"
+      },
+      {
+        id: "trace", layer: "gov", name: "可观测性 / Tracing", where: "位置:H.tracer.record(每轮) · H.tracer.flush(会话末)",
+        tip: "记录每一步,事后可回放。",
+        desc: "记录 Agent 的每一步决策与动作,事后可回放、可审计、可调试。注意它的双节奏:record 在循环内每轮都跑,而且记的是「决策 + 观察结果」成对的轨迹,否则只剩决策、回放不出究竟发生了什么;flush 在会话末最终落盘。真实系统还会循环内增量落盘,否则中途崩溃就丢了整条决策链。此外,产品级 harness 常在每步对文件状态另做快照(如 git write-tree),工具失败时回滚到上一快照、防止仓库被改坏——这是与决策轨迹互补的「状态快照 / checkpoint」,OpenCode、Claude Code 都有。"
+      },
+      {
+        id: "guardrail", layer: "gov", name: "权限门控 / Guardrail", where: "位置:H.guardrail.allow(action)",
+        tip: "危险动作先拦;高风险停下等人工审批。",
+        desc: "在动作执行「之前」做策略检查,把危险动作先拦下来。高风险场景(删库、转账、对外发布)在这里停下,转人工审批(Human-in-the-Loop)。它和 Hooks 常是同一套机制的不同用法:Guardrail 是「拦」,Hooks 是「触发」。"
+      },
+      {
+        id: "feedback", layer: "gov", name: "反馈循环", where: "位置:run_sensors(tests, lint, types, CI)",
+        tip: "HE 的灵魂:让机器护栏告诉 agent 做错没。",
+        desc: "这是 Harness Engineering 的灵魂,它有两半。最基础的一半:工具调用本身失败时,把错误信息回灌进上下文,模型据此改换路径重试,失败结果同样是环境给的客观事实。更主动的一半:Agent 改完代码后自动跑测试 / Lint / 类型检查 / CI,把失败回灌、据此自我修正。传统软件工程二十年的质量门禁,在 Agent 时代获得第二个用途:不再只是给人的门禁,而是给机器的护栏(这一「机器护栏」的提法见 Kent Beck 关于 augmented coding 的论述)。案例:OpenCode 把 LSP 实时诊断作为最即时的反馈源——edit 一完成就立刻拿到类型 / 语法 / 未定义变量的报错并回灌,比跑完整测试更快闭合循环。"
+      },
+
+      {
+        id: "ce", layer: "info", name: "CE 上下文工程", where: "位置:context = H.system_prompt + H.rules + …(开局装配那几行)",
+        tip: "组织「提供给大脑的信息」,harness 的另一半。",
+        desc: "Context Engineering,组织「给大脑什么信息」,是 harness 与执行/扩展并列的另一半工作。四件核心操作:Write(写出去/读回来)、Select(检索)、Compress(压缩)、Isolate(拆分)。其中 Write 不止即时记笔记,也包括把结构化任务清单(如 Claude Code 的 TodoWrite)持续回注上下文,在长任务里维持目标方向、对抗偏题。若说 LLM 是 CPU,上下文窗口就是它的 RAM,而 CE 就是这台机器的内存管理。决定任务质量的,始终是放入上下文窗口的信息质量。"
+      },
+      {
+        id: "memory", layer: "info", name: "记忆 (Write)", where: "位置:H.memory.read / write(循环内) / consolidate(会话末)",
+        tip: "跨会话长期记忆;循环内即时记,会话末固化。",
+        desc: "LLM 每次对话从零开始,记忆是 harness 替它补的「跨会话长期记忆」。它有两个发生时机:循环内,大脑主动决定「这条值得记」时写 scratchpad;会话末,consolidate 把零散笔记固化成长期记忆。现代实现里,读和写常常都是模型自己调用的工具(read_memory / write_memory),而非全由 harness 代劳。对应 scratchpad(会话内) vs 长期记忆(跨会话)的区分。"
+      },
+      {
+        id: "rag", layer: "info", name: "RAG / Select", where: "位置:H.retriever.retrieve(goal)",
+        tip: "把相关外部知识检索进上下文。",
+        desc: "Retrieval-Augmented Generation,把与当前任务相关的外部知识检索出来、纳入上下文,给模型事实锚点。它是 CE 四件事里的 Select:不是把所有信息放进去,而是只检索「这一步需要的恰到好处的信息」。检索有两个时机:开局一次性预检索(代码里这行),以及更现代的 just-in-time,模型在循环内用搜索/读文件工具按需取数(Claude Code 即用 glob/grep 即时检索),二者常混合使用。"
+      },
+      {
+        id: "entropy", layer: "info", name: "熵管理 / Compress", where: "位置:compact(context)",
+        tip: "窗口将满则压缩,防上下文腐化。",
+        desc: "上下文窗口会随多轮累积而膨胀、被无关内容稀释(上下文腐化)。熵管理在窗口将满时压缩 / 裁剪,保住高信号 token。它是 CE 四件事里的 Compress,主动的工程工作,而非被动等窗口被塞满。"
+      },
+
+      {
+        id: "rules", layer: "config", name: "规则文件", where: "位置:load_rule_files(CLAUDE.md, AGENTS.md)",
+        tip: "启动自动加载的声明式约束,最轻的一层。",
+        desc: "CLAUDE.md / AGENTS.md,启动时自动加载进上下文的声明式约束。它把「每次都要叮嘱的话」(技术栈、代码风格、禁改目录)固化成文件、纳入版本控制。这是最轻的一层 harness,只能做声明式约束,做不了流程编排(那要上 Skill 或代码框架)。"
+      }
+    ];
+    const DMAP = Object.fromEntries(DEFS.map(d => [d.id, d]));
+
+    /* 标注文字 → 概念 id(按优先级匹配子串) */
+    const LOOKUP = [
+      ["规则文件", "rules"], ["Skill", "skill"], ["Tool 原语", "tool"], ["MCP", "mcp"],
+      ["子 Agent", "subagent"], ["CE-Isolate", "subagent"], ["Hooks", "hooks"],
+      ["架构约束", "sandbox"], ["Sandbox", "sandbox"], ["可观测性", "trace"],
+      ["权限门控", "guardrail"], ["Guardrail", "guardrail"], ["反馈循环", "feedback"],
+      ["CE 上下文工程", "ce"], ["CE-读记忆", "memory"], ["CE-Write", "memory"], ["记忆", "memory"],
+      ["CE-Select", "rag"], ["RAG", "rag"], ["熵管理", "entropy"], ["CE-Compress", "entropy"]
+    ];
+    function lookId(txt) { for (const [s, id] of LOOKUP) { if (txt.indexOf(s) >= 0) return id; } return null; }
+
+    /* ---------- 语法高亮 ---------- */
+    function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+    const KW = /("(?:[^"\\]|\\.)*")|(\b(?:function|while|if|elif|else|return|not|and|or|in|continue|True|False|None)\b)|([A-Za-z_]\w*(?=\s*\())|(\b\d+\b)/g;
+    function hlCode(s) {
+      s = esc(s);
+      return s.replace(KW, (m, str, kw, call, num) => {
+        if (str) return '<span class="t-str">' + str + '</span>';
+        if (kw) return '<span class="t-kw">' + kw + '</span>';
+        if (call) {
+          if (call === "LLM") {
+            const t = DMAP.llm;
+            return '<span class="chip chip-mind" data-id="llm" data-tip="1"><span class="t-fn-llm">LLM</span></span>';
+          }
+          return '<span class="t-fn">' + call + '</span>';
+        }
+        if (num) return '<span class="t-num">' + num + '</span>';
+        return m;
+      });
+    }
+    function hlComment(s) {
+      s = esc(s);
+      s = s.replace(/【[^】]*】/g, m => {
+        const id = lookId(m);
+        if (!id) return m;
+        return '<span class="chip chip-' + DMAP[id].layer + '" data-id="' + id + '" data-tip="1">' + m + '</span>';
+      });
+      return '<span class="t-com">' + s + '</span>';
+    }
+    let curStep = 0;   // 默认从第 1 步(最简循环)开始,呼应「逐步讲解」
+    function buildStepper() {
+      const sp = document.getElementById("stepper");
+      let h = '<button class="ctl" id="stepPrev" aria-label="上一步">‹</button><div class="steps">';
+      STEP_TITLES.forEach((t, i) => {
+        h += '<button class="stepbtn" data-s="' + i + '" data-layer="' + STEP_LAYERS[i] + '"><b>' + (i + 1) + '</b><span>' + t + '</span></button>';
+      });
+      h += '</div><button class="ctl" id="stepNext" aria-label="下一步">›</button>';
+      sp.innerHTML = h;
+      sp.querySelectorAll(".stepbtn").forEach(b => b.addEventListener("click", () => setStep(+b.dataset.s)));
+      document.getElementById("stepPrev").addEventListener("click", () => setStep(curStep - 1));
+      document.getElementById("stepNext").addEventListener("click", () => setStep(curStep + 1));
+    }
+    function setStep(s) {
+      s = Math.max(0, Math.min(STEPS.length - 1, s));
+      curStep = s;
+      renderStep(s); renderNote(s);
+      document.querySelectorAll(".stepbtn").forEach((b, i) => {
+        b.classList.toggle("on", i === s);
+        b.classList.toggle("done", i < s);
+      });
+      const p = document.getElementById("stepPrev"), n = document.getElementById("stepNext");
+      if (p) p.disabled = s === 0;
+      if (n) n.disabled = s === STEPS.length - 1;
+    }
+    function renderNote(step) {
+      let h = '<h4><span class="sn-dot" style="background:var(--' + STEP_LAYERS[step] + ')"></span>' +
+        '<span class="sn-step">Step ' + (step + 1) + ' / ' + STEPS.length + '</span>' + STEP_TITLES[step] + '</h4><ul>';
+      STEP_NOTES[step].forEach(p => { h += '<li>' + p + '</li>'; });
+      document.getElementById("stepnote").innerHTML = h + '</ul>';
+    }
+    function renderStep(step) {
+      const lines = STEPS[step].split("\n");
+      const prevLines = step > 0 ? STEPS[step - 1].split("\n") : null;
+      const prevCount = {};
+      if (prevLines) prevLines.forEach(l => { prevCount[l] = (prevCount[l] || 0) + 1; });
+      let sec = 0, html = "";
+      lines.forEach((line, i) => {
+        if (line.indexOf("① 启动装配") >= 0) sec = 1;
+        else if (line.indexOf("② 主体") >= 0) sec = 2;
+        else if (line.indexOf("③ 收尾") >= 0) sec = 3;
+
+        let cls = "ln";
+        if (sec === 1) cls += " sec1"; else if (sec === 2) cls += " sec2"; else if (sec === 3) cls += " sec3";
+
+        const isFrame = /^\s{8,}#\s*={5,}/.test(line);
+        const hi = line.indexOf("#");
+        const codePart = hi >= 0 ? line.slice(0, hi) : line;
+        const isStar = codePart.indexOf("LLM(") >= 0;
+        if (isFrame) cls += " frame";
+        if (isStar) cls += " star";
+
+        let added = false;          // 本步相对上一步新增/变化的行 → diff 高亮
+        if (prevLines) {
+          if (prevCount[line] > 0) prevCount[line]--;
+          else if (line.trim() !== "") added = true;
+        }
+        if (added) cls += " added";
+
+        let body;
+        if (hi >= 0) body = hlCode(line.slice(0, hi)) + hlComment(line.slice(hi));
+        else body = hlCode(line);
+        if (isStar) { body += '<span class="starflag">★ 唯一的「任务决策」LLM 调用</span>'; }
+        html += '<div class="' + cls + '"><span class="gut">' + (i + 1) + '</span><span class="codetxt">' + (body || " ") + '</span></div>';
+      });
+      document.getElementById("code").innerHTML = html;
+    }
+
+    /* ---------- 卡片 ---------- */
+    const LAYERMETA = {
+      mind: { n: "智能 · CPU", c: "--mind" }, ext: { n: "扩展与动作", c: "--ext" },
+      info: { n: "信息 · CE", c: "--info" }, gov: { n: "治理", c: "--gov" }, config: { n: "配置", c: "--config" }
+    };
+    function renderCards() {
+      const root = document.getElementById("cardroot");
+      let html = "";
+      ["mind", "ext", "info", "gov", "config"].forEach(L => {
+        const items = DEFS.filter(d => d.layer === L);
+        html += '<div class="laygroup"><h3><span class="lb" style="background:var(' + LAYERMETA[L].c + ')"></span><span>' + LAYERMETA[L].n + '</span> <span class="meta">' + items.length + ' concepts</span></h3><div class="cards">';
+        items.forEach(d => {
+          html += '<article class="card card-' + d.layer + '" id="card-' + d.id + '" data-id="' + d.id + '">' +
+            '<h4><span class="desc-name">' + d.name + '</span><span class="badge">' + LAYERMETA[L].n.split(" ")[0] + '</span></h4>' +
+            '<p class="where">' + d.where + '</p>' +
+            '<p class="desc">' + d.desc + '</p></article>';
+        });
+        html += '</div></div>';
+      });
+      root.innerHTML = html;
+    }
+
+    /* ---------- 交互:悬停 tooltip / 点击跳转 / 层筛选 ---------- */
+    const tip = document.getElementById("tip");
+    function showTip(el) {
+      const d = DMAP[el.dataset.id]; if (!d) return;
+      tip.querySelector(".tname").textContent = d.name;
+      tip.querySelector(".twhere").textContent = d.where;
+      tip.querySelector(".tbody").textContent = d.desc;
+      tip.classList.add("show");
+      const r = el.getBoundingClientRect();
+      let x = r.left, y = r.bottom + 8;
+      tip.style.left = "0px"; tip.style.top = "0px";
+      const tw = tip.offsetWidth, th = tip.offsetHeight;
+      x = Math.min(x, window.innerWidth - tw - 12);
+      if (y + th > window.innerHeight) y = r.top - th - 8;
+      tip.style.left = Math.max(12, x) + "px"; tip.style.top = y + "px";
+    }
+    function hideTip() { tip.classList.remove("show"); }
+
+    function flashCard(id) {
+      const c = document.getElementById("card-" + id); if (!c) return;
+      c.scrollIntoView({ behavior: "smooth", block: "center" });
+      c.classList.remove("flash"); void c.offsetWidth; c.classList.add("flash");
+    }
+    function pulseChips(id) {
+      const cs = document.querySelectorAll('.chip[data-id="' + id + '"]');
+      if (!cs.length) return;
+      cs[0].scrollIntoView({ behavior: "smooth", block: "center" });
+      cs.forEach(c => { c.classList.remove("pulse"); void c.offsetWidth; c.classList.add("pulse"); });
+    }
+
+    document.addEventListener("mouseover", e => {
+      const chip = e.target.closest(".chip"); if (chip) showTip(chip);
+    });
+    document.addEventListener("mouseout", e => {
+      if (e.target.closest(".chip")) hideTip();
+    });
+    document.addEventListener("click", e => {
+      const chip = e.target.closest(".chip");
+      if (chip) { hideTip(); flashCard(chip.dataset.id); return; }
+      const card = e.target.closest(".card");
+      if (card) { pulseChips(card.dataset.id); }
+    });
+
+    /* 层筛选 */
+    document.querySelectorAll(".fbtn").forEach(b => {
+      b.addEventListener("click", () => {
+        document.querySelectorAll(".fbtn").forEach(x => x.classList.remove("on"));
+        b.classList.add("on");
+        const L = b.dataset.l;
+        const body = document.body;
+        body.className = body.className.replace(/\bflt\S*/g, "").trim();
+        if (L !== "all") { body.classList.add("flt"); body.classList.add("flt-" + L); }
+      });
+    });
+
+    buildStepper(); renderCards(); setStep(curStep);
+    document.addEventListener("keydown", e => {
+      if (e.target && /^(INPUT|TEXTAREA)$/.test(e.target.tagName)) return;
+      if (e.key === "ArrowLeft") setStep(curStep - 1);
+      else if (e.key === "ArrowRight") setStep(curStep + 1);
+    });
+
+    /* ---------- 亮/暗主题切换(缺省亮色,带 localStorage 记忆) ---------- */
+    (function () {
+      const root = document.documentElement;
+      const btn = document.getElementById("themebtn");
+      function sync() { btn.textContent = root.getAttribute("data-theme") === "dark" ? "☀" : "☾"; }
+      sync(); // 主题已由 <head> 内联脚本在绘制前设好,这里只同步按钮图标
+      btn.addEventListener("click", () => {
+        const next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
+        root.setAttribute("data-theme", next);
+        try { localStorage.setItem("pecehe-theme-2", next); } catch (e) { }
+        sync();
+      });
+    })();
+  </script>
+  
+
+</body><div id="immersive-translate-browser-popup" style="all: initial"><template shadowrootmode="open"><style>/** 基础色阶定义 **/
+:root,
+#mount[data-theme="light"],
+#mount:not([data-theme="dark"]) {
+  /* 中性灰阶（light） */
+  --c-00: #000000;
+  --c-22: #222222;
+  --c-33: #333333;
+  --c-66: #666666;
+  --c-83: #838383;
+  --c-99: #999999;
+  --c-c7: #c7c7c7;
+  --c-cc: #cccccc;
+  --c-e6: #e6e6e6;
+  --c-f5: #f5f5f5;
+  --c-ff: #ffffff;
+  /* 品牌主色阶（light） */
+  --p-main: #ea4c89;
+  --p-hover: #ec5e95;
+  --p-active: #e34a85;
+  --p-special: #ee71a2;
+  --p-disabled: #f4a5c4;
+  --p-text-disabled: #f9c9dc;
+  --p-weak: #fdedf3;
+  /* Surface 层级（light，TC 填充-1） */
+  --s-1: #f3f5f6;
+  --s-1-hover: #f6f8f9;
+  --s-1-active: #edf1f2;
+  --s-1-weak: #fafbfb;
+  /* 输入/边框（light，TC 填充-2） */
+  --input-bg-base: #fafbfc;
+  --input-border: #ecf0f7;
+  --input-border-strong: #e0e0e6;
+  --input-bg-strong: #fafdff;
+}
+
+:root[data-theme="dark"],
+[data-theme="dark"] {
+  /* 中性灰阶（dark） */
+  --c-00: #ffffff;
+  --c-22: #dbdbdb;
+  --c-33: #dbdbdb;
+  --c-66: #b3b3b3;
+  --c-83: #838383;
+  --c-99: #707070;
+  --c-c7: #666666;
+  --c-cc: #5c5c5c;
+  --c-e6: #3b3b3b;
+  --c-f5: #262626;
+  --c-ff: #222222;
+  /* 品牌主色阶（dark） */
+  --p-main: #e23c7c;
+  --p-hover: #ea4c89;
+  --p-active: #d5467d;
+  --p-special: #a93a65;
+  --p-disabled: #7e2f4d;
+  --p-text-disabled: #522335;
+  --p-weak: #26171d;
+  /* Surface 层级（dark，TC 填充-1） */
+  --s-1: #2d2e2f;
+  --s-1-hover: #323434;
+  --s-1-active: #202121;
+  --s-1-weak: #262627;
+  /* 输入/边框（dark，TC 填充-2） */
+  --input-bg-base: #2b2d30;
+  --input-border: #3e434b;
+  --input-border-strong: #43474b;
+  --input-bg-strong: #1f2123;
+}
+
+:root,
+#mount [data-theme] {
+  /* 业务/通用变量引用色阶（全局可见，含 Shadow DOM） */
+  --primary: var(--p-main);
+  --primary-hover: var(--p-hover);
+  --primary-inverse: #fff;
+  --modal-background: var(--s-1);
+  --modal-border: var(--input-border);
+  --modal-text: var(--c-22);
+  --modal-text-secondary: var(--c-66);
+  --modal-error: var(--p-main);
+  --modal-required: #f53f3f;
+  --modal-success: #68cd52;
+  --modal-button-background: var(--p-main);
+  --modal-button-text: var(--c-ff);
+  --modal-input-background: var(--input-bg-base);
+  --modal-check-color: var(--p-main);
+  --background-color: var(--c-ff);
+  --background-light-green: var(--s-1-weak, #f5f7f9);
+  --text-black-2: var(--c-22);
+  --text-gray-2: var(--c-22);
+  --text-gray-6: var(--c-66);
+  --text-gray-9: var(--c-99);
+  --text-gray-c2: var(--c-c7);
+  --switch-background-color: var(--c-c7, hsl(205deg, 16%, 77%));
+  --float-ball-more-button-border-color: var(--c-f5, #f6f6f6);
+  --float-ball-more-button-background-color: var(--c-ff);
+  --float-ball-more-button-hover-color: var(--p-weak);
+  --float-ball-more-button-svg-color: #6c6f73;
+  --service-bg-hover: var(--s-1-hover, #f7faff);
+  --service-bg: var(--s-1-weak, #fafbfb);
+}
+
+#mount {
+  --font-family: system-ui, -apple-system, "Segoe UI", "Roboto", "Ubuntu",
+    "Cantarell", "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  /* PC/H5 兼容的字号、间距、圆角、阴影变量 */
+  --f-12: 12px;
+  --f-14: 14px;
+  --f-15: 15px;
+  --f-16: 16px;
+  --f-18: 18px;
+  --f-20: 20px;
+  --space-4: 4px;
+  --space-6: 6px;
+  --space-8: 8px;
+  --space-12: 12px;
+  --space-16: 16px;
+  --space-18: 18px;
+  --space-24: 24px;
+  --radius-8: 8px;
+  --radius-12: 12px;
+  --radius-16: 16px;
+  --control-height-lg: 44px;
+  --width-28: 28px;
+  --width-24: 24px;
+  --width-20: 20px;
+  --width-18: 18px;
+  --width-16: 16px;
+  --width-label-md: 56px;
+  --shadow-lg: 0 18px 48px rgba(0, 0, 0, 0.12);
+
+  /* 常规变量 */
+  --line-height: 1.5;
+  --font-weight: 400;
+  --font-size: 16px;
+  --border-radius: 4px;
+  --border-width: 2px;
+  --outline-width: 3px;
+  --spacing: 16px;
+  --typography-spacing-vertical: 24px;
+  --block-spacing-vertical: calc(var(--spacing) * 2);
+  --block-spacing-horizontal: var(--spacing);
+  --grid-spacing-vertical: 0;
+  --grid-spacing-horizontal: var(--spacing);
+  --form-element-spacing-vertical: 12px;
+  --form-element-spacing-horizontal: 16px;
+  --nav-element-spacing-vertical: 16px;
+  --nav-element-spacing-horizontal: 8px;
+  --nav-link-spacing-vertical: 8px;
+  --nav-link-spacing-horizontal: 8px;
+  --form-label-font-weight: var(--font-weight);
+  --transition: 0.2s ease-in-out;
+  --modal-overlay-backdrop-filter: blur(4px);
+  --switch-color: var(--primary-inverse);
+  --switch-checked-background-color: var(--primary);
+  --icon-xia: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGcgaWQ9IkZyYW1lIj4KPHBhdGggaWQ9IlZlY3RvciIgZD0iTTguMDAyOTEgOS42Nzk4M0wzLjgzMzM5IDUuNTEyMjFMMy4wMjUzOSA2LjMxOTgzTDguMDAzMjkgMTEuMjk1MUwxMi45NzYyIDYuMzE5ODNMMTIuMTY3OSA1LjUxMjIxTDguMDAyOTEgOS42Nzk4M1oiIGZpbGw9IiM4MzgzODMiLz4KPC9nPgo8L3N2Zz4K");
+  /* 兼容旧变量：主色直接引用品牌主色阶 */
+  --primary: var(--p-main);
+  --primary-hover: var(--p-hover);
+  --primary-inverse: #fff;
+  /* Modal 业务变量引用色阶 */
+  --modal-background: var(--s-1);
+  --modal-border: var(--input-border);
+  --modal-text: var(--c-22);
+  --modal-text-secondary: var(--c-66);
+  --modal-error: var(--p-main);
+  --modal-required: #f53f3f;
+  --modal-success: #68cd52;
+  --modal-button-background: var(--p-main);
+  --modal-button-text: var(--c-ff);
+  --modal-input-background: var(--input-bg-base);
+  --modal-check-color: var(--p-main);
+  --background-color: var(--c-ff);
+  --background-light-green: var(--s-1-weak, #f5f7f9);
+  --text-black-2: var(--c-22);
+  --text-gray-2: var(--c-22);
+  --text-gray-6: var(--c-66);
+  --text-gray-9: var(--c-99);
+  --text-gray-c2: var(--c-c7);
+  --switch-background-color: var(--c-c7, hsl(205deg, 16%, 77%));
+  --float-ball-more-button-border-color: var(--c-f5, #f6f6f6);
+  --float-ball-more-button-background-color: var(--c-ff);
+  --float-ball-more-button-hover-color: var(--p-weak);
+  --float-ball-more-button-svg-color: #6c6f73;
+  --service-bg-hover: var(--s-1-hover, #f7faff);
+  --service-bg: var(--s-1-weak, #fafbfb);
+  line-height: var(--line-height);
+  font-family: var(--font-family);
+  font-size: var(--font-size);
+}
+
+@media (max-width: 480px) {
+  :root,
+  #mount {
+    --f-12: 10px;
+    --f-14: 12px;
+    --f-15: 13px;
+    --f-16: 14px;
+    --f-18: 16px;
+    --f-20: 18px;
+    --space-4: 4px;
+    --space-6: 4px;
+    --space-8: 6px;
+    --space-12: 8px;
+    --space-16: 12px;
+    --space-18: 14px;
+    --space-24: 18px;
+    --radius-8: 6px;
+    --radius-12: 10px;
+    --radius-16: 12px;
+    --control-height-lg: 38px;
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.1);
+    --width-28: 24px;
+    --width-24: 20px;
+    --width-20: 16px;
+    --width-18: 14px;
+    --width-16: 12px;
+    --width-label-md: 52px;
+  }
+}
+
+#mount * {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+:where(#mount) a,
+:where(#mount) [role="link"] {
+  --color: var(--primary);
+  --background-color: transparent;
+  outline: none;
+  background-color: var(--background-color);
+  color: var(--color);
+  -webkit-text-decoration: var(--text-decoration);
+  text-decoration: var(--text-decoration);
+  transition: background-color var(--transition), color var(--transition),
+    box-shadow var(--transition), -webkit-text-decoration var(--transition);
+  transition: background-color var(--transition), color var(--transition),
+    text-decoration var(--transition), box-shadow var(--transition);
+  transition: background-color var(--transition), color var(--transition),
+    text-decoration var(--transition), box-shadow var(--transition),
+    -webkit-text-decoration var(--transition);
+}
+:where(#mount) a:is([aria-current], :hover, :active, :focus),
+:where(#mount) [role="link"]:is([aria-current], :hover, :active, :focus) {
+  --color: var(--primary-hover);
+  --text-decoration: underline;
+}
+
+:where(#mount) label {
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--text-gray-2, #222222);
+}
+
+:where(#mount) button {
+  width: 100%;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1.3;
+  min-height: 44px;
+  border-radius: 12px;
+  padding: 0 14px;
+  border: none;
+  background-color: var(--primary, #ea4c89);
+  color: #ffffff;
+  cursor: pointer;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+:where(#mount) button:hover {
+  background-color: var(--primary-hover, #f082ac);
+}
+
+:where(#mount) button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+:where(#mount) select,
+:where(#mount) input,
+:where(#mount) textarea {
+  font-family: inherit;
+  color: var(--text-gray-2, #222222);
+}
+
+:where(#mount) select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-family: inherit;
+  color: var(--text-gray-2, inherit);
+  font-size: 13px;
+  line-height: 1.3;
+  outline: none;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 12px;
+  background-color: var(--popup-item-background-color, transparent);
+  background-image: var(--icon-xia, none);
+  background-repeat: no-repeat;
+  background-position: center right 12px;
+  background-size: 16px auto;
+  cursor: pointer;
+}
+
+:where(#mount) input[type="checkbox"] {
+  accent-color: var(--primary, #ea4c89);
+}
+
+[type="checkbox"],
+[type="radio"] {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 1.25em;
+  height: 1.25em;
+  margin-top: -0.125em;
+  margin-right: 0.375em;
+  margin-left: 0;
+  -webkit-margin-start: 0;
+  margin-inline-start: 0;
+  -webkit-margin-end: 0.375em;
+  margin-inline-end: 0.375em;
+  border-width: var(--border-width);
+  font-size: inherit;
+  vertical-align: middle;
+  cursor: pointer;
+}
+[type="checkbox"]::-ms-check,
+[type="radio"]::-ms-check {
+  display: none;
+}
+[type="checkbox"]:checked,
+[type="checkbox"]:checked:active,
+[type="checkbox"]:checked:focus,
+[type="radio"]:checked,
+[type="radio"]:checked:active,
+[type="radio"]:checked:focus {
+  --background-color: var(--primary);
+  --border-color: var(--primary);
+  background-image: var(--icon-checkbox);
+  background-position: center;
+  background-size: 0.75em auto;
+  background-repeat: no-repeat;
+}
+[type="checkbox"] ~ label,
+[type="radio"] ~ label {
+  display: inline-block;
+  margin-right: 0.375em;
+  margin-bottom: 0;
+  cursor: pointer;
+}
+
+[type="checkbox"]:indeterminate {
+  --background-color: var(--primary);
+  --border-color: var(--primary);
+  background-image: var(--icon-minus);
+  background-position: center;
+  background-size: 0.75em auto;
+  background-repeat: no-repeat;
+}
+
+[type="radio"] {
+  border-radius: 50%;
+}
+[type="radio"]:checked,
+[type="radio"]:checked:active,
+[type="radio"]:checked:focus {
+  --background-color: var(--primary-inverse);
+  border-width: 0.35em;
+  background-image: none;
+}
+
+:where(#mount) [type="checkbox"][role="switch"] {
+  --background-color: var(--switch-background-color);
+  --border-color: var(--switch-background-color);
+  --color: var(--switch-color);
+  width: 2.25em;
+  height: 1.25em;
+  border: var(--border-width) solid var(--border-color);
+  border-radius: 1.25em;
+  background-color: var(--background-color);
+  line-height: 1.25em;
+}
+:where(#mount) [type="checkbox"][role="switch"]:focus {
+  --background-color: var(--switch-background-color);
+  --border-color: var(--switch-background-color);
+}
+:where(#mount) [type="checkbox"][role="switch"]:checked {
+  --background-color: var(--switch-checked-background-color);
+  --border-color: var(--switch-checked-background-color);
+}
+:where(#mount) [type="checkbox"][role="switch"]:before {
+  display: block;
+  width: calc(1.25em - (var(--border-width) * 2));
+  height: 100%;
+  border-radius: 50%;
+  background-color: var(--color);
+  content: "";
+  transition: margin 0.1s ease-in-out;
+}
+:where(#mount) [type="checkbox"][role="switch"]:checked {
+  background-image: none;
+}
+:where(#mount) [type="checkbox"][role="switch"]:checked::before {
+  margin-left: calc(1.125em - var(--border-width));
+  -webkit-margin-start: calc(1.125em - var(--border-width));
+  margin-inline-start: calc(1.125em - var(--border-width));
+}
+
+:where(#mount) [type="checkbox"][aria-invalid="false"],
+:where(#mount) [type="checkbox"]:checked[aria-invalid="false"],
+:where(#mount) [type="radio"][aria-invalid="false"],
+:where(#mount) [type="radio"]:checked[aria-invalid="false"],
+:where(#mount) [type="checkbox"][role="switch"][aria-invalid="false"],
+:where(#mount) [type="checkbox"][role="switch"]:checked[aria-invalid="false"] {
+  --border-color: var(--form-element-valid-border-color);
+}
+:where(#mount) [type="checkbox"][aria-invalid="true"],
+:where(#mount) [type="checkbox"]:checked[aria-invalid="true"],
+:where(#mount) [type="radio"][aria-invalid="true"],
+:where(#mount) [type="radio"]:checked[aria-invalid="true"],
+:where(#mount) [type="checkbox"][role="switch"][aria-invalid="true"],
+:where(#mount) [type="checkbox"][role="switch"]:checked[aria-invalid="true"] {
+  --border-color: var(--form-element-invalid-border-color);
+}
+
+.text-black {
+  color: var(--text-black-2);
+}
+
+.text-gray-2 {
+  color: var(--text-gray-2);
+}
+
+.text-gray-6 {
+  color: var(--text-gray-6);
+}
+
+.text-gray-9 {
+  color: var(--text-gray-9);
+}
+
+.text-gray-c2 {
+  color: var(--text-gray-c2);
+}
+
+.pt-4 {
+  padding-top: 16px;
+}
+
+.p-2 {
+  padding: 8px;
+}
+
+.pl-5 {
+  padding-left: 48px;
+}
+
+.p-0 {
+  padding: 0;
+}
+
+.pl-2 {
+  padding-left: 8px;
+}
+
+.pl-4 {
+  padding-left: 24px;
+}
+
+.pt-2 {
+  padding-top: 8px;
+}
+
+.pb-2 {
+  padding-bottom: 8px;
+}
+
+.pb-4 {
+  padding-bottom: 16px;
+}
+
+.pb-5 {
+  padding-bottom: 20px;
+}
+
+.pr-5 {
+  padding-right: 48px;
+}
+
+.text-sm {
+  font-size: 13px;
+}
+
+.text-base {
+  font-size: 16px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-row {
+  flex-direction: row;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-end {
+  justify-content: flex-end;
+}
+
+.flex-grow {
+  flex-grow: 1;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.mb-0 {
+  margin-bottom: 0px;
+}
+
+.mb-2 {
+  margin-bottom: 8px;
+}
+
+.mb-4 {
+  margin-bottom: 16px;
+}
+
+.mb-3 {
+  margin-bottom: 12px;
+}
+
+.inline-block {
+  display: inline-block;
+}
+
+.py-2 {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.py-2-5 {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.mt-0 {
+  margin-top: 0;
+}
+
+.mt-2 {
+  margin-top: 8px;
+}
+
+.mt-3 {
+  margin-top: 12px;
+}
+
+.mt-4 {
+  margin-top: 16px;
+}
+
+.mt-5 {
+  margin-top: 20px;
+}
+
+.mt-6 {
+  margin-top: 24px;
+}
+
+.mb-1 {
+  margin-bottom: 4px;
+}
+
+.ml-4 {
+  margin-left: 24px;
+}
+
+.ml-3 {
+  margin-left: 16px;
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
+
+.ml-1 {
+  margin-left: 4px;
+}
+
+.mr-1 {
+  margin-right: 4px;
+}
+
+.mr-2 {
+  margin-right: 8px;
+}
+
+.mr-3 {
+  margin-right: 16px;
+}
+
+.mx-2 {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+.pl-3 {
+  padding-left: 12px;
+}
+
+.pr-3 {
+  padding-right: 12px;
+}
+
+.p-3 {
+  padding: 12px;
+}
+
+.px-1 {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.px-3 {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.pt-3 {
+  padding-top: 12px;
+}
+
+.px-6 {
+  padding-left: 18px;
+  padding-right: 18px;
+}
+
+.px-4 {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.pt-6 {
+  padding-top: 20px;
+}
+
+.py-3 {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.py-0 {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.left-auto {
+  left: auto !important;
+}
+
+.max-h-28 {
+  max-height: 112px;
+}
+
+.max-h-30 {
+  max-height: 120px;
+}
+
+.overflow-y-scroll {
+  overflow-y: scroll;
+}
+
+.text-xs {
+  font-size: 12px;
+}
+
+.inline-flex {
+  display: inline-flex;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-3 {
+  flex: 3;
+}
+
+.flex-4 {
+  flex: 4;
+}
+
+.flex-2 {
+  flex: 2;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.max-content {
+  width: max-content;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.items-baseline {
+  align-items: baseline;
+}
+
+.my-5 {
+  margin-top: 48px;
+  margin-bottom: 48px;
+}
+
+.my-4 {
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
+.my-3 {
+  margin-top: 16px;
+  margin-bottom: 16px;
+}
+
+.pt-3 {
+  padding-top: 12px;
+}
+
+.px-3 {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.pt-2 {
+  padding-top: 8px;
+}
+
+.px-2 {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.pt-1 {
+  padding-top: 4px;
+}
+
+.px-1 {
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.pb-2 {
+  padding-bottom: 8px;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+.w-auto {
+  width: auto;
+}
+
+.shrink-0 {
+  flex-shrink: 0;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+.close {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+  background-image: var(--icon-close);
+  background-position: center;
+  background-size: auto 1rem;
+  background-repeat: no-repeat;
+  opacity: 0.5;
+  transition: opacity var(--transition);
+}
+
+.padding-two-column {
+  padding-left: 40px;
+  padding-right: 40px;
+}
+
+.muted {
+  color: #999;
+}
+
+.text-label {
+  color: #666;
+}
+
+.display-none {
+  display: none;
+}
+
+/* dark use #18232c */
+@media (prefers-color-scheme: dark) {
+  .text-label {
+    color: #9ca3af;
+  }
+}
+
+.text-decoration-none {
+  text-decoration: none;
+}
+
+.text-decoration-none:is([aria-current], :hover, :active, :focus),
+[role="link"]:is([aria-current], :hover, :active, :focus) {
+  --text-decoration: none !important;
+  background-color: transparent !important;
+}
+
+.text-overflow-ellipsis {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.max-w-20 {
+  max-width: 180px;
+  white-space: nowrap;
+}
+
+[data-theme="light"],
+#mount:not([data-theme="dark"]) {
+  --popup-footer-background-color: #e8eaeb;
+  --popup-content-background-color: #ffffff;
+  --popup-item-background-color: #f3f5f6;
+  --popup-item-hover-background-color: #eaeced;
+  --popup-trial-pro-background-color: #f9fbfc;
+  --service-select-content-shadow: 0px 2px 12px 0px rgba(75, 76, 77, 0.2);
+  --service-select-border-color: #fafafa;
+  --service-select-selected-background-color: #f3f5f6;
+  --download-app-background: #f3f5f6;
+  --translate-language-background-color: #f3f5f6;
+  --translate-language-icon-color: #666666;
+  --translate-language-text-color: #222222;
+  --translate-language-hover-background-color: #fdedf3;
+  --translate-language-hover-icon-color: #e95d93;
+  --error-bg: #fdedf3;
+  --error-text: #222;
+  --error-link: #ea4c89;
+}
+
+[data-theme="dark"] {
+  --popup-footer-background-color: #0d0d0d;
+  --popup-content-background-color: #191919;
+  --popup-item-background-color: #272727;
+  --popup-item-hover-background-color: #333333;
+  --popup-trial-pro-background-color: #222222;
+  --service-select-content-shadow: 0px 2px 12px 0px rgba(0, 0, 0, 0.9);
+  --service-select-border-color: #2c2c2c;
+  --service-select-selected-background-color: #333333;
+  --download-app-background: #333;
+  --translate-language-background-color: #2d2e2f;
+  --translate-language-icon-color: #b3b3b3;
+  --translate-language-text-color: #b3b3b3;
+  --translate-language-hover-background-color: #a97b8c;
+  --translate-language-hover-icon-color: rgba(255, 255, 255, 0.9);
+  --error-bg: #26171d;
+  --error-text: #dbdbdb;
+  --error-link: #ea4c89;
+}
+
+#mount {
+  min-width: 268px;
+}
+
+body {
+  padding: 0;
+  margin: 0 auto;
+  min-width: 268px;
+  border-radius: 10px;
+}
+
+.popup-container {
+  font-size: 16px;
+  --font-size: 16px;
+  color: #666;
+  background-color: var(--popup-footer-background-color);
+  width: 316px;
+  min-width: 316px;
+  position: relative;
+  overflow: hidden;
+}
+
+.popup-content {
+  background-color: var(--popup-content-background-color);
+  border-radius: 0px 0px 12px 12px;
+  padding: 16px 20px;
+}
+
+.popup-userscript-three-feature-layout {
+  background-color: var(--popup-footer-background-color);
+}
+
+.popup-userscript-three-feature-layout .popup-content {
+  padding-bottom: 20px;
+  border-radius: 0 0 12px 12px;
+}
+
+.popup-userscript-three-feature-layout .popup-footer {
+  border-radius: 0;
+}
+
+.immersive-translate-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  width: 100%;
+  touch-action: none;
+}
+
+.immersive-translate-popup-wrapper {
+  background: var(--background-color);
+  border-radius: 10px;
+  border: 1px solid var(--muted-border-color);
+}
+
+.main-button {
+  font-size: 16px;
+  font-weight: 700;
+  vertical-align: middle;
+  border-radius: 12px;
+  padding: unset;
+  height: 48px;
+  line-height: 48px;
+  flex: 1;
+}
+
+select.translate-service,
+select.min-select {
+  --form-element-spacing-horizontal: 0;
+  margin-bottom: 0px;
+  max-width: unset;
+  flex: 1;
+  overflow: hidden;
+  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  padding-right: 30px;
+  padding-left: 0px;
+  background-position: center right 12px;
+  background-size: 16px auto;
+  background-image: var(--icon-xia);
+  text-overflow: ellipsis;
+  color: var(--text-gray-2);
+  background-color: transparent;
+  box-shadow: unset !important;
+  cursor: pointer;
+}
+
+select.more {
+  background-position: center right;
+  padding-right: 20px;
+}
+
+select.translate-service {
+  color: var(--text-black-2);
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB2aWV3Qm94PSIwIDAgOCA4IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIG9wYWNpdHk9IjAuOCI+PHBhdGggZD0iTTMuNDc5NzMgNi4zODY0M0wwLjcyOTI5NyAzLjMyMjE2QzAuNjE2ODggMy4xOTY5NCAwLjU1NDY5NSAzLjAzNDU5IDAuNTU0Njg4IDIuODY2M0MwLjU1NDY4OCAyLjQ4OTI0IDAuODYwNTQ3IDIuMTgzNTkgMS4yMzc4NCAyLjE4MzU5SDYuNzM4NzFDNi45MDcwNyAyLjE4MzU4IDcuMDY5NTEgMi4yNDU3MiA3LjE5NDg4IDIuMzU4MDlDNy40NzU3NCAyLjYwOTg2IDcuNDk5MTkgMy4wNDE0OCA3LjI0NzI2IDMuMzIyMTZMNC40OTY4MiA2LjM4NjQ0QzQuNDgwMzIgNi40MDQ4MiA0LjQ2MjgzIDYuNDIyMjkgNC40NDQ0NCA2LjQzODc4QzQuMTYzNTggNi42OTA1NSAzLjczMTY2IDYuNjY3MTEgMy40Nzk3MyA2LjM4NjQzWiIgZmlsbD0iIzk5OTk5OSIvPjwvZz48L3N2Zz4K");
+  background-size: 8px auto;
+}
+
+.min-select-container.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.popup-footer {
+  background-color: var(--popup-footer-background-color);
+  height: 40px;
+  display: flex;
+  align-items: center;
+}
+
+/* Footer 三栏布局样式 */
+.footer-link-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  min-width: 72px;
+}
+
+.footer-icon-btn {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.footer-icon-btn svg {
+  color: #999999;
+}
+
+[data-theme="dark"] .footer-icon-btn svg {
+  color: #707070;
+}
+
+.footer-link-text {
+  font-size: 12px;
+  line-height: 18px;
+  color: #666666;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .footer-link-text {
+  color: #b3b3b3;
+}
+
+.footer-link-btn-right {
+  justify-content: flex-end;
+}
+
+.footer-center-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: #999999;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.footer-center-text.is-overflowing {
+  justify-content: flex-start;
+}
+
+.footer-center-text.is-overflowing .footer-center-content {
+  animation: footer-scroll-text 12s linear infinite;
+}
+
+@keyframes footer-scroll-text {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.footer-center-content {
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer-scroll-gap {
+  display: inline-block;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+[data-theme="dark"] .footer-center-text {
+  color: #707070;
+}
+
+.footer-text-content {
+  display: inline-block;
+}
+
+.footer-privacy-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: inherit;
+  text-decoration: none;
+}
+
+.footer-version-inline-text {
+  font-size: 12px;
+  color: #999999;
+  line-height: 1;
+  border-bottom: 1px solid transparent;
+}
+
+[data-theme="dark"] .footer-version-inline-text {
+  color: #707070;
+}
+
+.footer-version-inline-text:hover {
+  border-bottom-color: #999999;
+}
+
+[data-theme="dark"] .footer-version-inline-text:hover {
+  border-bottom-color: #707070;
+}
+
+.translate-language-row {
+  gap: 4px;
+}
+
+.translate-language-exchange {
+  width: 36px;
+  height: 48px;
+  background-color: var(--translate-language-background-color);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--translate-language-icon-color);
+  flex-shrink: 0;
+  cursor: pointer;
+  margin-right: 8px;
+}
+
+.translate-language-exchange:hover {
+  color: var(--translate-language-hover-icon-color);
+}
+
+.translate-language-exchange-active {
+  background-color: var(--translate-language-hover-background-color);
+  color: var(--translate-language-hover-icon-color);
+}
+
+.translate-language-exchange-active:hover {
+  background-color: var(--translate-language-hover-background-color);
+  color: var(--translate-language-hover-icon-color);
+}
+
+.translate-language-arrow {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+}
+
+.translation-service-container {
+  background-color: var(--popup-item-background-color);
+  border-radius: 12px;
+}
+
+.translation-service-primary-field {
+  position: relative;
+}
+
+.translation-service-guide-hitbox {
+  position: absolute;
+  right: 46px;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: auto;
+}
+
+.min-select-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 44px;
+  background-color: var(--popup-item-background-color);
+  padding-left: 16px;
+}
+
+.min-select-container:first-child {
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+}
+
+.min-select-container:last-child {
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+}
+
+.min-select-container:only-child {
+  border-radius: 10px;
+}
+
+.popup-ai-context-label {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  flex: 1;
+  min-width: 60px;
+  flex-shrink: 0;
+  margin-bottom: 0;
+}
+
+.popup-ai-context-switch {
+  align-self: center;
+  margin: 0;
+  margin-inline-end: 12px;
+}
+
+.translate-mode {
+  width: 36px;
+  height: 48px;
+  border-radius: 12px;
+  background-color: var(--translate-language-background-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  color: var(--translate-language-text-color);
+  margin-right: 8px;
+}
+
+/* 快捷操作设置标题栏 */
+.widgets-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 4px;
+  margin-top: 20px;
+  margin-bottom: 12px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.widgets-header-title {
+  color: #999999;
+}
+
+.widgets-header-action {
+  color: #999999;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.widgets-header-action:hover {
+  color: #666666;
+}
+
+.widgets-container {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.popup-userscript-three-feature-layout .widgets-container-compact-monkey {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 12px;
+}
+
+.popup-userscript-three-feature-layout .widgets-container-compact-monkey.widgets-four-items {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.widgets-container.widgets-single-item {
+  grid-template-columns: minmax(0, 1fr);
+  margin-top: 12px;
+}
+
+.widgets-container.widgets-single-item .widget-item {
+  max-width: none;
+}
+
+/* 当只有两个小组件时的样式优化 */
+.widgets-container.widgets-two-items {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.widgets-container.widgets-two-items .widget-item {
+  max-width: none;
+}
+
+.widget-item {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  background-color: transparent;
+  border: 1px solid #eef0f2;
+  box-sizing: border-box;
+  font-size: 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  padding: 0 14px;
+  text-align: left;
+  gap: 6px;
+}
+
+.widget-item.widget-item-single {
+  flex: 1 1 auto;
+  flex-direction: row;
+  justify-content: center;
+  border: 1px solid #eef0f2;
+  border-radius: 16px;
+  padding: 0 14px;
+  background: transparent;
+}
+
+.popup-userscript-three-feature-layout .widget-item-compact {
+  min-height: 44px;
+  flex-direction: row;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.widget-item svg {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+}
+
+.widget-icon-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--c-66, #666666);
+  font-size: 14px;
+  line-height: 21px;
+  text-align: left;
+  word-break: keep-all;
+}
+
+.popup-userscript-three-feature-layout .widget-item-compact .widget-icon-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 14px;
+  line-height: 21px;
+  text-align: left;
+}
+
+.widget-item.widget-item-single .widget-icon-text {
+  white-space: nowrap;
+  text-align: left;
+  color: var(--c-66, #666666);
+}
+
+[data-theme="dark"] .widget-item,
+[data-theme="dark"] .widget-item.widget-item-single {
+  border-color: #2e2e2e;
+}
+
+[data-theme="dark"] .widget-icon-text,
+[data-theme="dark"] .widget-item.widget-item-single .widget-icon-text {
+  color: var(--c-66, #666666);
+}
+
+[data-theme="dark"] .more-settings-icon {
+  fill: #191919;
+}
+
+.share-button-container {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 2px 3px 0 8px;
+}
+
+.share-button-container svg {
+  fill: var(--text-gray-9);
+}
+
+.min-select-container:hover,
+.widget-item:hover {
+  background-color: var(--popup-item-hover-background-color);
+}
+
+.main-button:hover {
+  background-color: #f5508f;
+}
+
+.share-button-container:hover {
+  background-color: var(--popup-item-background-color);
+  border-radius: 6px;
+}
+
+.error-boundary {
+  background: #fff2f0;
+  border: 1px solid #ffccc7;
+  display: flex;
+  padding: 12px;
+  font-size: 14px;
+  color: rgba(0, 0, 0, 0.88);
+  word-break: break-all;
+  margin: 12px;
+  border-radius: 12px;
+  flex-direction: column;
+}
+
+.upgrade-pro {
+  border-radius: 11px;
+  background: linear-gradient(57deg, #272727 19.8%, #696969 82.2%);
+  padding: 2px 8px;
+  transform: scale(0.85);
+}
+
+.upgrade-pro span {
+  background: linear-gradient(180deg, #ffeab4 17.65%, #f8c235 85.29%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 12px;
+  margin-left: 4px;
+}
+
+.upgrade-pro svg {
+  margin-top: -2px;
+}
+
+.upgrade-pro:hover {
+  background: linear-gradient(57deg, #3d3d3d 19.8%, #949494 82.2%);
+}
+
+.border-bottom-radius-0 {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+}
+
+.trial-pro-container {
+  border-radius: 0px 0px 12px 12px;
+  background: var(--popup-trial-pro-background-color);
+  display: flex;
+  align-items: center;
+  height: 44px;
+  padding-left: 16px;
+  padding-right: 12px;
+  font-size: 12px;
+}
+
+.trial-pro-container label {
+  line-height: 13px;
+  color: var(--text-black-2);
+}
+
+.trial-pro-container img {
+  margin-left: 5px;
+}
+
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.upgrade-pro-discount-act {
+  height: 25px;
+  display: flex;
+  padding: 0 4px;
+  align-items: center;
+  border-radius: 15px;
+  background: linear-gradient(
+    90deg,
+    #cefbfa 11.33%,
+    #d7f56f 63.75%,
+    #fccd5e 100%
+  );
+  transform: scale(0.9);
+  box-shadow: 0px 1.8px 3.6px 0px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+}
+
+.upgrade-pro-discount-act span {
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 4px;
+  color: #222222;
+}
+
+.upgrade-pro-discount-act:hover {
+  text-decoration: unset;
+  background: linear-gradient(
+    90deg,
+    #e2fffe 11.33%,
+    #e6ff91 63.75%,
+    #ffdf93 100%
+  );
+}
+
+.custom-select-container {
+  width: 200px;
+  position: relative;
+  flex: 1;
+}
+
+#translation-service-select {
+  padding-right: 12px;
+}
+
+.custom-select-content {
+  border-radius: 12px;
+  background: var(--popup-content-background-color);
+  box-shadow: var(--service-select-content-shadow);
+  border: 1px solid var(--service-select-border-color);
+  padding: 8px;
+  position: absolute;
+  left: -68px;
+  right: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.custom-select-item.default {
+  width: 100%;
+  padding: 0;
+}
+
+.custom-select-item {
+  font-size: 14px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--text-black-2);
+  width: auto;
+  overflow: hidden;
+  height: 30px;
+  line-height: 30px;
+}
+
+.custom-select-item-img {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .custom-select-item-img {
+    margin-right: 6px;
+  }
+}
+
+.custom-select-content .custom-select-item.selected,
+.custom-select-content .custom-select-item:hover {
+  background: var(--service-select-selected-background-color);
+}
+
+.custom-select-item > span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-select-item-pro {
+  font-size: 12px;
+  margin-left: 6px;
+  display: flex;
+}
+
+.custom-select-item-pro img {
+  margin: 0 3px;
+  width: 20px;
+  flex-shrink: 0;
+}
+
+.service-select-inline-sponsor-container {
+  width: 50px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.service-select-inline-sponsor-marquee {
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  column-gap: 12px;
+  animation: service-select-inline-sponsor-scroll 10s linear infinite;
+}
+
+.service-select-inline-sponsor-track {
+  min-width: max-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+@keyframes service-select-inline-sponsor-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - 6px));
+  }
+}
+
+.custom-select-group-header {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-gray-9);
+  padding: 8px 8px 6px;
+  margin-top: 2px;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-select-group-header--recommendation {
+  padding-top: 4px;
+}
+
+.custom-select-group-header-tip {
+  display: inline-flex;
+  align-items: center;
+  color: #bcbcbc;
+  cursor: pointer;
+  line-height: 0;
+}
+
+.more-container {
+  position: relative;
+}
+
+.new-menu-indicator {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #ef3434;
+  border-radius: 50%;
+  right: 18px;
+  top: 4px;
+}
+
+.download-app {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  background: var(--download-app-background);
+  padding: 4px 8px;
+  color: var(--text-gray-6);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Popup 动画效果 */
+@keyframes popup-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes popup-fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px) scale(0.95);
+  }
+}
+
+.popup-generic-content {
+  animation: popup-fade-in 0.2s ease-out;
+}
+
+.popup-generic-content.hiding {
+  animation: popup-fade-out 0.15s ease-in;
+}
+
+select.min-select {
+  --form-element-spacing-horizontal: 0;
+  max-width: 128px;
+  overflow: hidden;
+  color: var(--primary);
+  font-size: 13px;
+  border: none;
+  padding: 0;
+  padding-right: 20px;
+  text-overflow: ellipsis;
+  color: var(--color);
+}
+select.min-select-secondary {
+  color: var(--color);
+}
+select.min-select:focus {
+  outline: none;
+  border: none;
+  --box-shadow: none;
+}
+
+select.min-select-left {
+  padding-right: 0px;
+  /* padding-left: 24px; */
+  /* background-position: center left 0; */
+  text-overflow: ellipsis;
+  text-align: left;
+}
+
+select.transform-padding-left {
+  padding-left: 12px;
+  transform: translateX(-12px);
+  background-position: center right 0px;
+}
+
+select.text-gray-6 {
+  color: var(--text-gray-6);
+}
+
+/* dark use black, for windows */
+@media (prefers-color-scheme: dark) {
+  select.translate-service option,
+  select.min-select option {
+    background-color: #666666;
+  }
+}
+
+select.min-select-no-arrow {
+  background-image: none;
+  padding-right: 0;
+}
+
+.activity-tips {
+  border-radius: 8px;
+  padding: 0px 8px;
+  height: 26px;
+  background: linear-gradient(
+    83deg,
+    #faccde -0.87%,
+    #fce7ef 43.13%,
+    #fbd6e4 72.08%,
+    #ffb3d1 96.34%
+  );
+  color: #333;
+  cursor: pointer;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.activity-tips-icon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.countdown-container {
+  min-width: 50px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+.activity-tips-text {
+  font-weight: 600;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 非会员升级提示 */
+.upgrade-tips {
+  padding: 0px 6px 0px 4px;
+  height: 18px;
+  color: #ea4c89;
+  cursor: pointer;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.upgrade-tips svg:first-child {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  filter: drop-shadow(0px 4px 4px rgba(236, 76, 140, 0.2));
+}
+
+.upgrade-tips-text {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.upgrade-tips-switch {
+  position: relative;
+  width: 30px;
+  height: 18px;
+  border-radius: 24px;
+  background: #cccccc;
+  flex-shrink: 0;
+}
+
+.upgrade-tips-switch-thumb {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  top: 2px;
+  left: 2px;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+/* 抽屉组件样式 */
+.drawer-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 0.25s ease,
+    visibility 0.25s ease;
+}
+
+.drawer-overlay.drawer-visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.drawer-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ffffff;
+  border-radius: 12px 12px 0 0;
+  z-index: 101;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.drawer-visible .drawer-panel {
+  transform: translateY(0);
+}
+
+[data-theme="dark"] .drawer-panel {
+  background: #222222;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px;
+  flex-shrink: 0;
+}
+
+.drawer-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333333;
+}
+
+[data-theme="dark"] .drawer-title {
+  color: #e0e0e0;
+}
+
+.drawer-close {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999999;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.drawer-close:hover {
+  background-color: #f3f5f6;
+}
+
+[data-theme="dark"] .drawer-close:hover {
+  background-color: #333333;
+}
+
+.drawer-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.drawer-body.drawer-body-hover {
+  padding: 0 20px 20px 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.drawer-body.drawer-body-more-settings {
+  padding-top: 0;
+}
+
+.drawer-footer {
+  padding: 12px 20px;
+  border-top: 1px solid #eef0f2;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+[data-theme="dark"] .drawer-footer {
+  border-top: 1px solid #2e2e2e;
+}
+
+.drawer-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.drawer-footer-actions-single {
+  justify-content: center;
+}
+
+.drawer-footer-text {
+  font-size: 12px;
+  cursor: pointer;
+  color: #999999;
+  text-decoration: none;
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.drawer-footer-actions-single .drawer-footer-text {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.drawer-footer-text:hover {
+  text-decoration: underline;
+}
+
+/* 抽屉内容区域样式 */
+.drawer-section {
+  margin-bottom: 16px;
+}
+
+.drawer-section:last-child {
+  margin-bottom: 0;
+}
+
+.drawer-section-highlight {
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+[data-theme="dark"] .drawer-section-highlight {
+  background-color: #2a2a2a;
+}
+
+.drawer-section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #666666;
+  margin-bottom: 12px;
+}
+
+[data-theme="dark"] .drawer-section-title {
+  color: #999999;
+}
+
+.drawer-section-divider {
+  height: 1px;
+  background-color: #eef0f2;
+  margin: 16px 0;
+}
+
+/* ========== 通用抽屉组件样式 ========== */
+.popup-drawer-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.popup-drawer-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 8px;
+  background: #f3f5f6;
+}
+
+[data-theme="dark"] .popup-drawer-tabs {
+  background: #2a2a2a;
+}
+
+.popup-drawer-tabs button {
+  height: 30px;
+  border: 0;
+  border-radius: 6px;
+  color: #666666;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  cursor: pointer;
+}
+
+.popup-drawer-tabs button.active {
+  color: #222222;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+[data-theme="dark"] .popup-drawer-tabs button {
+  color: #b3b3b3;
+}
+
+[data-theme="dark"] .popup-drawer-tabs button.active {
+  color: #f3f3f3;
+  background: #1f1f1f;
+}
+
+.popup-drawer-card {
+  background: #f3f5f6;
+  border-radius: 12px;
+  padding: 12px 12px 16px;
+}
+
+[data-theme="dark"] .popup-drawer-card {
+  background: #2a2a2a;
+}
+
+.popup-drawer-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 21px;
+  gap: 12px;
+}
+
+.popup-drawer-card-header input[type="checkbox"][role="switch"] {
+  margin: 0;
+  flex-shrink: 0;
+}
+
+.popup-drawer-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #222222;
+  line-height: 21px;
+}
+
+.popup-drawer-card-title-row {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+}
+
+.popup-drawer-premium-icon {
+  width: 24px;
+  height: 12px;
+  flex: 0 0 auto;
+}
+
+[data-theme="dark"] .popup-drawer-card-title {
+  color: #e0e0e0;
+}
+
+.popup-drawer-card-description {
+  margin-top: 10px;
+  color: #777777;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+}
+
+.popup-drawer-card-description-tip {
+  margin-top: 4px;
+  color: #d46b08;
+}
+
+[data-theme="dark"] .popup-drawer-card-description {
+  color: #a5a5a5;
+}
+
+[data-theme="dark"] .popup-drawer-card-description-tip {
+  color: #f6ad55;
+}
+
+.popup-drawer-card-divider {
+  height: 1px;
+  width: calc(100% + 24px);
+  background-color: #ffffff;
+  margin: 12px -12px 16px;
+}
+
+[data-theme="dark"] .popup-drawer-card-divider {
+  background-color: #333333;
+}
+
+.popup-drawer-demo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.popup-drawer-demo-region-fixed {
+  height: 51px;
+  max-height: 51px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-drawer-demo-region-min {
+  min-height: 51px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-drawer-demo-selection {
+  width: 100%;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+
+.popup-drawer-demo-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-drawer-demo-plus,
+.popup-drawer-demo-equal {
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 21px;
+  color: #333333;
+}
+
+[data-theme="dark"] .popup-drawer-demo-plus,
+[data-theme="dark"] .popup-drawer-demo-equal {
+  color: #e0e0e0;
+}
+
+.popup-drawer-demo-logo {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.popup-drawer-demo-logo img {
+  width: 28px;
+  height: 28px;
+  display: block;
+  filter: drop-shadow(0 4px 12px rgba(255, 166, 201, 0.5));
+}
+
+.popup-drawer-demo-lasso {
+  width: 38px;
+  height: 24px;
+  border: 3px solid #ea4c89;
+  border-right-color: transparent;
+  border-radius: 52% 48% 50% 46%;
+  transform: rotate(-10deg);
+  box-shadow: 0 4px 12px rgba(255, 166, 201, 0.5);
+  box-sizing: border-box;
+}
+
+.popup-drawer-demo-result {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  color: #333333;
+}
+
+.popup-drawer-demo-result-ellipsis {
+  min-width: 0;
+  max-width: calc(100% - 72px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-theme="dark"] .popup-drawer-demo-result {
+  color: #e0e0e0;
+}
+
+.popup-drawer-trigger {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.popup-drawer-trigger-label {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: #999999;
+  padding-left: 4px;
+}
+
+.popup-drawer-trigger-options {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.popup-drawer-trigger-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  height: 34px;
+  border-radius: 8px;
+  border: 1px solid #eef0f2;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: #333333;
+  background: #ffffff;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.popup-drawer-trigger-option-disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.popup-drawer-trigger-option:not(.popup-drawer-trigger-option-selected):hover {
+  border-color: #d0d3d6;
+}
+
+.popup-drawer-trigger-option-selected {
+  border: 0.5px solid #ea4c89;
+  background: #fdedf3;
+  box-shadow: 0px 4px 12px rgba(255, 166, 201, 0.5);
+}
+
+[data-theme="dark"] .popup-drawer-trigger-option {
+  background: #1f1f1f;
+  border-color: #333333;
+  color: #e0e0e0;
+}
+
+[data-theme="dark"]
+  .popup-drawer-trigger-option:not(
+    .popup-drawer-trigger-option-selected
+  ):hover {
+  border-color: #444444;
+}
+
+[data-theme="dark"] .popup-drawer-trigger-option-selected {
+  background: rgba(233, 76, 137, 0.2);
+  border-color: #ea4c89;
+  box-shadow: 0 4px 12px 0 rgba(255, 166, 201, 0.3);
+}
+
+.popup-drawer-trigger-option-with-icon {
+  gap: 8px;
+}
+
+/* ========== 通用抽屉演示区域样式 ========== */
+/* 键帽样式 */
+.popup-drawer-demo-keycap {
+  min-width: 72px;
+  padding: 9px;
+  height: auto;
+  box-sizing: border-box;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #ffffff;
+  background:
+    radial-gradient(
+      60px 36px at 85% 100%,
+      rgba(208, 208, 208, 0.2),
+      rgba(255, 255, 255, 0)
+    ),
+    radial-gradient(72px 36px at 50% 0%, #101010 0%, #242424 100%);
+  box-shadow:
+    2px 2px 3.5px rgba(0, 0, 0, 0.4),
+    inset 0.5px 0.7px 0.4px rgba(255, 255, 255, 0.5),
+    inset -0.5px -0.5px 0.2px rgba(0, 0, 0, 0.6);
+}
+
+.popup-drawer-demo-keycap-text {
+  max-width: 50px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 小圆点样式 */
+.popup-drawer-demo-mini-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ea4c89;
+  flex-shrink: 0;
+  align-self: center;
+  box-shadow: 0 4px 12px rgba(255, 166, 201, 0.5);
+}
+
+[data-theme="dark"] .drawer-section-divider {
+  background-color: #333333;
+}
+
+/* 开关行 */
+.drawer-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.drawer-switch-row.drawer-row-border {
+  border-bottom: 1px solid #eef0f2;
+  margin-bottom: 8px;
+  padding-bottom: 12px;
+}
+
+[data-theme="dark"] .drawer-switch-row.drawer-row-border {
+  border-bottom-color: #333333;
+}
+
+.drawer-switch-label {
+  font-size: 14px;
+  color: #222222;
+}
+
+[data-theme="dark"] .drawer-switch-label {
+  color: #e0e0e0;
+}
+
+/* 链接行 */
+.drawer-link-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  cursor: pointer;
+  border-bottom: 1px solid #eef0f2;
+  font-size: 14px;
+  color: #222222;
+}
+
+.drawer-link-row:last-child {
+  border-bottom: none;
+}
+
+[data-theme="dark"] .drawer-link-row {
+  border-bottom-color: #333333;
+  color: #e0e0e0;
+}
+
+.drawer-link-row:hover {
+  color: #ea4c89;
+}
+
+/* 演示区域 */
+.drawer-demo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 0;
+}
+
+.drawer-demo-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #eef0f2;
+}
+
+[data-theme="dark"] .drawer-demo-icon {
+  background-color: #333333;
+  border-color: #444444;
+}
+
+.drawer-demo-plus,
+.drawer-demo-equal {
+  font-size: 16px;
+  color: #999999;
+}
+
+.drawer-demo-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.drawer-demo-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.drawer-demo-result {
+  font-size: 14px;
+  color: #222222;
+  padding: 8px 12px;
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #eef0f2;
+}
+
+[data-theme="dark"] .drawer-demo-result {
+  background-color: #333333;
+  border-color: #444444;
+  color: #e0e0e0;
+}
+
+/* 触发方式选项 */
+.drawer-options {
+  display: flex;
+  gap: 8px;
+}
+
+.drawer-options-wrap {
+  flex-wrap: wrap;
+}
+
+.drawer-option {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: #666666;
+  background-color: #f3f5f6;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+[data-theme="dark"] .drawer-option {
+  background-color: #333333;
+  color: #b3b3b3;
+}
+
+.drawer-option:hover {
+  background-color: #eaeced;
+}
+
+[data-theme="dark"] .drawer-option:hover {
+  background-color: #3a3a3a;
+}
+
+.drawer-option-selected {
+  border-color: #ea4c89;
+  background-color: #fdedf3;
+  color: #ea4c89;
+  box-shadow: 0px 4px 12px rgba(255, 166, 201, 0.5);
+}
+
+[data-theme="dark"] .drawer-option-selected {
+  background-color: rgba(234, 76, 137, 0.2);
+}
+
+.drawer-body.drawer-body-selection {
+  padding: 0 20px 20px 20px;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+/* ========== 更多设置抽屉样式 ========== */
+.more-settings-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.more-settings-quick-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.more-settings-feature-card {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  background-color: #f3f5f6;
+  transition: background-color 0.2s ease;
+}
+
+.more-settings-feature-card:hover {
+  background-color: #e8eaec;
+}
+
+.more-settings-feature-card:active {
+  background-color: #dde0e2;
+}
+
+.more-settings-feature-card-label {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: #666666;
+  white-space: nowrap;
+}
+
+.more-settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.more-settings-switch-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  min-height: 21px;
+  gap: 12px;
+}
+
+.more-settings-switch-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  color: #222222;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.more-settings-switch-row input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+[data-theme="dark"] .more-settings-switch-label {
+  color: #e0e0e0;
+}
+
+.more-settings-cache-label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 4px;
+}
+
+.more-settings-cache-size {
+  color: #999999;
+}
+
+.more-settings-cache-clean-link {
+  color: #ea4c89;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.more-settings-cache-clean-link:hover {
+  text-decoration: underline;
+}
+
+[data-theme="dark"] .more-settings-cache-size {
+  color: #8a8a8a;
+}
+
+[data-theme="dark"] .more-settings-feature-card {
+  background-color: #2a2a2a;
+}
+
+[data-theme="dark"] .more-settings-feature-card:hover {
+  background-color: #333333;
+}
+
+[data-theme="dark"] .more-settings-feature-card:active {
+  background-color: #3a3a3a;
+}
+
+[data-theme="dark"] .more-settings-feature-card-label {
+  color: #e0e0e0;
+}
+
+/* 动作按钮样式 */
+.more-settings-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  color: #222222;
+  background-color: #f3f5f6;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.more-settings-action-button:hover {
+  background-color: #e8eaec;
+}
+
+.more-settings-action-button:active {
+  background-color: #dde0e2;
+}
+
+.more-settings-action-button-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 21px;
+  color: inherit;
+  text-align: center;
+}
+
+[data-theme="dark"] .more-settings-action-button {
+  color: #e0e0e0;
+  background-color: #2a2a2a;
+}
+
+[data-theme="dark"] .more-settings-action-button:hover {
+  background-color: #333333;
+}
+
+[data-theme="dark"] .more-settings-action-button:active {
+  background-color: #3a3a3a;
+}
+
+[data-theme="dark"] .more-settings-action-button-label {
+  color: #e0e0e0;
+}
+
+/* 错误消息组件样式 */
+.error-message-container {
+  display: flex;
+  align-items: flex-start;
+  padding: 12px 16px;
+  margin-top: 6px;
+  margin-bottom: -14px;
+  border: 1px solid #f53f3f;
+  border-radius: 12px;
+  background-color: var(--error-bg);
+}
+
+.error-message-icon-wrapper {
+  width: 21px;
+  height: 21px;
+  min-width: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 4px;
+}
+
+.error-message-icon {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #f53f3f;
+}
+
+.error-message-text {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  color: var(--error-text);
+}
+
+.error-message-text a {
+  color: var(--error-link);
+  text-decoration: underline;
+}
+
+.ad-banner-container {
+  margin-top: 10px;
+  margin-bottom: -5px;
+}
+
+html {
+  font-size: 17px;
+}
+
+@media print {
+  .imt-fb-container {
+    display: none !important;
+  }
+}
+
+#mount {
+  position: absolute;
+  display: none;
+  min-width: 250px;
+  height: auto;
+  --font-size: 17px;
+  font-size: 17px;
+}
+
+/* float-ball */
+.imt-fb-container {
+  position: fixed;
+  padding: 0;
+  top: 335px;
+  width: fit-content;
+  display: flex;
+  flex-direction: column;
+  display: none;
+  direction: ltr;
+  background-color: transparent !important;
+}
+
+.imt-fb-container.active .imt-manga-button {
+  opacity: 1;
+}
+
+.imt-fb-container.left {
+  align-items: flex-start;
+  left: 0;
+}
+
+.imt-fb-container.right {
+  align-items: flex-end;
+  right: 0;
+}
+
+.imt-fb-btn {
+  cursor: pointer;
+  background: var(--float-ball-more-button-background-color);
+  height: 36px;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.08);
+}
+
+.imt-fb-btn.left {
+  border-top-right-radius: 36px;
+  border-bottom-right-radius: 36px;
+  padding-left: 3px;
+}
+
+.imt-fb-btn.right {
+  border-top-left-radius: 36px;
+  border-bottom-left-radius: 36px;
+  padding-right: 3px;
+}
+
+.imt-fb-btn.mini.left {
+  transform: translateX(-22px);
+}
+
+.imt-fb-btn.mini.right {
+  transform: translateX(22px);
+}
+
+.imt-fb-btn.mini.active {
+  transform: translateX(0);
+}
+
+.imt-fb-btn div {
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  position: relative;
+}
+
+.imt-fb-btn .imt-fb-hit-area {
+  position: absolute;
+  top: 0;
+  height: 36px;
+  bottom: -6px;
+  left: -6px;
+  right: -6px;
+  background: transparent;
+}
+
+.imt-fb-btn.mini.right .imt-fb-hit-area {
+  left: -10px;
+}
+
+.imt-fb-btn.mini.left .imt-fb-hit-area {
+  right: -10px;
+}
+
+.imt-fb-btn.left div {
+  border-top-right-radius: 34px;
+  border-bottom-right-radius: 34px;
+  justify-content: flex-end;
+}
+
+.imt-fb-btn.right div {
+  border-top-left-radius: 34px;
+  border-bottom-left-radius: 34px;
+}
+
+.imt-fb-logo-img {
+  width: 20px;
+  height: 20px;
+  margin: 0 10px;
+}
+
+.imt-fb-logo-img-big-bg {
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  background-color: #ed6d8f;
+  border-radius: 50%;
+  margin: 0 5px;
+}
+
+.imt-float-ball-translated {
+  position: absolute;
+  width: 11px;
+  height: 11px;
+  bottom: 4px;
+  right: 4px;
+}
+
+.btn-animate {
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-transition:
+    opacity ease-out 250ms,
+    -webkit-transform ease-out 250ms;
+  transition:
+    opacity ease-out 250ms,
+    -webkit-transform ease-out 250ms;
+  transition:
+    opacity ease-out 250ms,
+    transform ease-out 250ms;
+  transition:
+    opacity ease-out 250ms,
+    transform ease-out 250ms,
+    -webkit-transform ease-out 250ms;
+}
+
+.imt-fb-setting-btn {
+  margin-right: 18px;
+  width: 28px;
+  height: 28px;
+}
+
+.immersive-translate-popup-wrapper {
+  background: var(--background-color);
+  border-radius: 20px;
+  box-shadow: 2px 10px 24px 0px #0e121614;
+  border: none;
+}
+
+.popup-container {
+  border-radius: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.popup-content {
+  border-radius: 20px 20px 12px 12px;
+}
+.popup-footer {
+  border-radius: 20px;
+}
+
+.popup-userscript-three-feature-layout {
+  border-radius: 20px;
+}
+
+.popup-userscript-three-feature-layout .popup-content {
+  border-radius: 20px 20px 12px 12px;
+}
+
+.popup-userscript-three-feature-layout .popup-footer {
+  border-radius: 0;
+}
+
+.imt-fb-close-button {
+  cursor: pointer;
+  position: absolute;
+  left: -10px;
+  bottom: -20px;
+}
+.imt-fb-container.left .imt-fb-close-button {
+  left: auto;
+  right: -10px;
+}
+
+.imt-fb-close-content {
+  padding: 22px;
+  width: 320px;
+  pointer-events: all;
+}
+
+.imt-fb-close-title {
+  font-weight: 500;
+  color: var(--text-black-2);
+}
+
+.imt-fb-close-radio-content {
+  background-color: var(--background-light-green);
+  padding: 8px 20px;
+}
+
+.imt-fb-radio-sel,
+.imt-fb-radio-nor {
+  width: 16px;
+  height: 16px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.imt-fb-radio-sel {
+  border: 2px solid var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imt-fb-radio-sel div {
+  width: 8px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: var(--primary);
+}
+
+.imt-fb-radio-nor {
+  border: 2px solid var(--input-border-strong);
+}
+
+.imt-fb-primary-btn {
+  background-color: var(--primary);
+  width: 72px;
+  height: 32px;
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  line-height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.imt-fb-default-btn {
+  border: 1px solid var(--primary);
+  width: 72px;
+  height: 32px;
+  border-radius: 8px;
+  color: var(--primary);
+  line-height: 32px;
+  text-align: center;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.imt-fb-guide-container {
+  width: 312px;
+  transform: translateY(-45%);
+}
+
+.imt-fb-guide-bg {
+  position: absolute;
+  left: 30px;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  height: 100%;
+  width: 90%;
+}
+
+.imt-fb-guide-bg.left {
+  transform: scaleX(-1);
+}
+
+.imt-fb-guide-content {
+  margin: 16px -30px 80px 0px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.imt-fb-guide-content.left {
+  margin: 16px 21px 60px 32px;
+}
+
+.imt-fb-guide-img {
+  width: 220px;
+  height: 112px;
+}
+
+.imt-fb-guide-message {
+  font-size: 14px;
+  line-height: 28px;
+  color: #333333;
+  white-space: pre-wrap;
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.imt-manga-guide-message {
+  font-size: 16px;
+  line-height: 24px;
+  color: #333333;
+  text-align: center;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.imt-fb-guide-button {
+  margin-top: 16px;
+  line-height: 40px;
+  height: 40px;
+  padding: 0 20px;
+  width: unset;
+}
+
+.imt-fb-side {
+  border-radius: 50%;
+  cursor: pointer;
+  pointer-events: all;
+  position: relative;
+}
+
+.imt-fb-side {
+  margin: 10px 0;
+}
+
+.imt-fb-side::before,
+.imt-manga-button::before,
+.imt-fb-round-button::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  left: 2px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.imt-fb-side:hover::before,
+.imt-manga-button:hover::before,
+.imt-fb-round-button:hover::before {
+  background-color: var(--float-ball-more-button-hover-color);
+}
+
+.imt-fb-new-badge {
+  width: 26px;
+  height: 14px;
+  padding: 3px;
+  background-color: #f53f3f;
+  border-radius: 4px;
+  position: absolute;
+  top: -5px;
+  right: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.imt-fb-side * {
+  pointer-events: all;
+}
+
+.imt-fb-pin-icon {
+  position: absolute;
+  left: -16px;
+  bottom: -12px;
+  opacity: 0;
+  cursor: pointer;
+}
+.imt-fb-container.left .imt-fb-pin-icon {
+  left: auto;
+  right: -16px;
+}
+
+.imt-fb-side:hover .imt-fb-pin-icon {
+  opacity: 1;
+}
+
+.imt-fb-more-button {
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+/* Sheet.css */
+.immersive-translate-sheet {
+  position: fixed;
+  transform: translateY(100%);
+  /* Start off screen */
+  left: 0;
+  right: 0;
+  background-color: var(--background-color);
+  transition: transform 0.3s ease-out;
+  /* Smooth slide transition */
+  box-shadow: 0px -2px 10px rgba(0, 0, 0, 0.1);
+  /* Ensure it's above other content */
+  bottom: 0;
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+  overflow: hidden;
+}
+
+.immersive-translate-sheet.visible {
+  transform: translateY(0);
+}
+
+.immersive-translate-sheet-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+.immersive-translate-sheet-backdrop.visible {
+  opacity: 1;
+}
+
+.popup-container-sheet {
+  max-width: 100vw;
+  width: 100vw;
+}
+
+.imt-no-events svg * {
+  pointer-events: none !important;
+}
+
+.imt-manga-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  pointer-events: all;
+  margin: 0 0 10px 0;
+  background-color: var(--float-ball-more-button-background-color);
+  border-radius: 50%;
+  box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.08);
+  right: 8px;
+}
+
+.imt-manga-feedback {
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.imt-fb-round-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--float-ball-more-button-background-color);
+  border-radius: 50%;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.imt-fb-round-button > svg {
+  z-index: 1;
+}
+
+.imt-fb-upgrade-button {
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.imt-fb-power-user-card {
+  position: absolute;
+  bottom: -130px;
+  width: 266px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 2px 10px 24px 0 rgba(14, 18, 22, 0.08);
+  border: 1px solid rgba(250, 251, 251, 1);
+  pointer-events: all;
+  z-index: 2;
+  background: linear-gradient(172deg, rgba(255, 255, 255, 0.30) 4.36%, #FFF 35.98%), linear-gradient(0deg, rgba(255, 255, 255, 0.40) 0%, rgba(255, 255, 255, 0.40) 100%), radial-gradient(39.95% 47.41% at -0.53% 55.22%, #E0C4F7 0%, rgba(224, 196, 247, 0.00) 100%), radial-gradient(56.37% 54.27% at 86.17% 0%, #E0C4F6 0%, rgba(224, 196, 246, 0.00) 100%), radial-gradient(42.04% 37.43% at -0.53% 3.75%, #AED5FF 0%, rgba(174, 213, 255, 0.00) 100%), radial-gradient(66.88% 52.09% at 36.81% 19.55%, #757ED8 0%, #6B6AC0 100%), #FFF;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.imt-fb-power-user-card.right {
+  right: 60px;
+}
+
+.imt-fb-power-user-card.right::after {
+  content: '';
+  position: absolute;
+  right: -10px;
+  top: 130px;
+  border-width: 10px 0 10px 10px;
+  border-style: solid;
+  border-color: transparent transparent transparent #fff;
+  filter: drop-shadow(2px 0 2px rgba(14, 18, 22, 0.06));
+}
+
+.imt-fb-power-user-card.left {
+  left: 60px;
+}
+
+.imt-fb-power-user-card.left::after {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 130px;
+  border-width: 10px 10px 10px 0;
+  border-style: solid;
+  border-color: transparent #fff transparent transparent;
+  filter: drop-shadow(-2px 0 2px rgba(14, 18, 22, 0.06));
+}
+
+.imt-fb-power-user-card-banner {
+  display: block;
+  width: 128px;
+  height: auto;
+  margin-top: 8px;
+  border-radius: 8px 8px 0 0;
+}
+
+.imt-fb-power-user-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 16px 24px 0;
+  box-sizing: border-box;
+}
+
+.imt-fb-power-user-card-title {
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  text-align: center;
+}
+
+.imt-fb-power-user-card-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.imt-fb-power-user-card-body {
+  padding: 12px 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+
+.imt-fb-power-user-card-desc {
+  color: #333;
+  font-size: 14px;
+  line-height: 22px;
+  text-align: center;
+}
+
+.imt-fb-power-user-card-primary {
+  margin-top: 16px;
+  height: 37px;
+  border-radius: 8px;
+  background: linear-gradient(110deg, #F497BC 17.37%, #EC4C8C 89.68%);
+  color: var(--ZX-FFFFFF, #FFF);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 21px; /* 150% */
+  display: flex;
+  padding: 8px;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  flex: 1 0 0;
+}
+
+.imt-manga-translated {
+  position: absolute;
+  left: 24px;
+  top: 20px;
+}
+
+.imt-float-ball-loading {
+  animation: imt-loading-animation 0.6s infinite linear !important;
+}
+
+.imt-manga-guide-bg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  z-index: -1;
+  width: 100%;
+  transform: translateY(-50%);
+}
+.imt-manga-guide-content {
+  position: absolute;
+  top: 15px;
+  left: 0;
+  right: 0;
+  margin: 0 40px 0;
+}
+
+.img-manga-guide-button {
+  width: fit-content;
+  margin: 0 auto;
+}
+
+.img-manga-close {
+  position: absolute;
+  bottom: -200px;
+  width: 32px;
+  height: 32px;
+  left: 0;
+  right: 0;
+  margin: auto;
+  cursor: pointer;
+}
+
+.imt-fb-container.dragging .imt-manga-button,
+.imt-fb-container.dragging .btn-animate:not(.imt-fb-btn) {
+  display: none !important;
+}
+
+.imt-fb-container.dragging .imt-fb-btn {
+  border-radius: 50% !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  cursor: move !important;
+}
+
+.imt-fb-container.dragging .imt-fb-btn div {
+  border-radius: 50% !important;
+  width: 36px !important;
+  height: 36px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 !important;
+}
+
+.imt-fb-container.dragging .imt-fb-btn.left,
+.imt-fb-container.dragging .imt-fb-btn.right {
+  border-radius: 50% !important;
+}
+
+.imt-fb-container.dragging .imt-fb-btn.left div,
+.imt-fb-container.dragging .imt-fb-btn.right div {
+  border-radius: 50% !important;
+}
+
+.imt-fb-container.dragging .imt-fb-logo-img {
+  margin: 0 !important;
+}
+
+.imt-fb-container.dragging .imt-float-ball-translated {
+  right: 2px !important;
+  bottom: 2px !important;
+}
+
+@-webkit-keyframes imt-loading-animation {
+  from {
+    -webkit-transform: rotate(0deg);
+  }
+
+  to {
+    -webkit-transform: rotate(359deg);
+  }
+}
+
+@keyframes imt-loading-animation {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(359deg);
+  }
+}
+
+.imt-fb-icon {
+  color: #666666;
+}
+
+[data-theme="dark"] .imt-fb-icon {
+  color: #b3b3b3;
+}
+
+[data-theme="light"] .imt-fb-icon {
+  color: #666666;
+}
+
+/* 悬浮球设置弹窗样式 */
+.imt-fb-setting-wrapper {
+  border-radius: 12px;
+  box-shadow: 2px 10px 24px 0px rgba(0, 0, 0, 0.06);
+}
+
+.imt-fb-setting-content {
+  padding: 16px;
+  width: 350px;
+  pointer-events: all;
+}
+
+.imt-fb-setting-title {
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 24px;
+  color: var(--text-black-2);
+}
+
+.imt-fb-setting-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 24px 0;
+}
+
+.imt-fb-preview-wrapper {
+  display: flex;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.imt-fb-preview-item {
+  width: 99px;
+  height: 57px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  overflow: hidden;
+}
+
+.imt-fb-preview-item.light {
+  background-color: #f3f5f6;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.imt-fb-preview-item.dark {
+  background-color: #444;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.imt-fb-preview-ball {
+  height: 36px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.08);
+  transition: all 0.2s ease;
+}
+
+.imt-fb-preview-ball.light {
+  background-color: #fff;
+  border-top-left-radius: 36px;
+  border-bottom-left-radius: 36px;
+}
+
+.imt-fb-preview-ball.dark {
+  background-color: #111;
+  border-top-left-radius: 36px;
+  border-bottom-left-radius: 36px;
+}
+
+.imt-fb-preview-ball.full {
+  width: 41px;
+  justify-content: center;
+}
+
+.imt-fb-preview-ball.mini {
+  width: 41px;
+  justify-content: center;
+  transform: translateX(21px);
+}
+
+.imt-fb-preview-ball .imt-fb-preview-logo {
+  flex-shrink: 0;
+}
+
+/* 选项区域 */
+.imt-fb-setting-options {
+  margin-top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.imt-fb-setting-option-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 4px;
+}
+
+.imt-fb-setting-option-label {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 21px;
+  color: var(--text-black-2);
+}
+
+/* Toggle 开关样式 */
+.imt-fb-toggle {
+  width: 30px;
+  height: 18px;
+  background-color: var(--switch-background-color);
+  border-radius: 24px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.imt-fb-toggle.checked {
+  background-color: var(--primary);
+}
+
+.imt-fb-toggle.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.imt-fb-toggle-thumb {
+  width: 14px;
+  height: 14px;
+  background-color: var(--switch-color);
+  border-radius: 50%;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s ease;
+  box-shadow: 0 0 10px 0 rgba(0, 0, 0, 0.08);
+}
+
+.imt-fb-toggle.checked .imt-fb-toggle-thumb {
+  transform: translateX(12px);
+}
+
+.imt-fb-setting-hide-options {
+  background-color: var(--background-light-green);
+  padding: 8px 20px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.imt-fb-setting-save-btn {
+  background-color: var(--primary);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  line-height: 45px;
+  height: 45px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 16px;
+  transition: opacity 0.2s ease;
+}
+
+.imt-fb-setting-save-btn:hover {
+  opacity: 0.9;
+}
+
+.imt-fb-setting-save-btn:active {
+  opacity: 0.8;
+}
+
+.imt-fb-side-panel-hide-content {
+  width: 330px;
+}
+
+.imt-fb-side-panel-hide-desc {
+  margin-top: 12px;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--text-gray-6);
+}
+
+.imt-fb-side-panel-hide-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.imt-fb-side-panel-hide-cancel-btn,
+.imt-fb-side-panel-hide-confirm-btn {
+  border: none;
+  appearance: none;
+  margin: 0;
+  height: 40px;
+  line-height: 40px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.imt-fb-side-panel-hide-cancel-btn {
+  border-radius: 8px;
+  background-color: var(--background-light-green);
+  color: var(--text-black-2);
+}
+
+.imt-fb-side-panel-hide-confirm-btn {
+  margin-top: 0;
+}
+</style><div id="mount" style="display: block;"><div hidden="" id="immersive-translate-popup-overlay" class="immersive-translate-popup-overlay" style="z-index: 2147483647; background-color: rgba(0, 0, 0, 0.5);"><div class="immersive-translate-popup-wrapper" style="position: fixed; top: 50%; left: 50%; transform: translateX(-50%) translateY(-50%);"></div></div></div></template></div></html>
