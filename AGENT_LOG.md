@@ -5,6 +5,24 @@
 
 ---
 
+## 流程偏离说明
+
+### 偏离：未使用 git-worktrees + PR 工作流
+
+- **Superpowers 标准流程**：`using-git-worktrees` → 每个 worktree 对应一个 PR → `finishing-a-development-branch` 决定 merge/保留/丢弃
+- **本项目实际做法**：`subagent-driven-development` 直接 dispatch subagent 到 master 分支，每个 task 独立 commit
+- **偏离原因**：
+  1. 项目时间窗口有限（1 天内完成 26 个 task），worktree + PR 的 overhead（创建 worktree、开 PR、review、merge）会使每个 task 的周期从 2-5 分钟膨胀到 10-15 分钟
+  2. 26 个 task 中有大量线性依赖（基础设施 → 领域 → 应用 → 表示），真正可并行的 task 不超过 5 个，worktree 并行带来的加速有限
+  3. subagent-driven-development 本身已提供 context 隔离（每个 subagent 是全新会话），worktree 的文件系统隔离在此场景下增量收益不大
+  4. 所有 subagent 的输出经过两阶段 review（spec 合规 + 代码质量）后才合并，质量门禁未因跳过 PR 而减弱
+- **风险与补救**：
+  - 风险：缺少 PR 层级的 code review 轨迹，所有变更直接进入 master，回滚粒度较粗
+  - 补救：每个 task 独立 commit，commit message 标注 task 编号，可通过 `git revert` 精确回滚单个 task；AGENT_LOG.md 完整记录每个 task 的 subagent、commit hash 和人工干预
+- **反思**：如果重做，会对真正独立的大模块（如 WebUI 前端、Docker 分发）使用 worktree + PR，而对线性依赖的领域层 task 保留 subagent 直提模式。两种模式可以混合使用
+
+---
+
 ## Phase 0: 规约与计划（2026-07-10）
 
 ### 记录 0.1 · brainstorming 启动
