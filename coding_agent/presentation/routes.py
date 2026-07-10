@@ -2,10 +2,12 @@
 """REST API routes for the Coding Agent Harness."""
 from __future__ import annotations
 
+import asyncio
 import uuid
 from fastapi import APIRouter
 from coding_agent.infrastructure.credential_store import CredentialStore
 from coding_agent.application.session_manager import SessionManager
+from coding_agent.presentation.websocket import ws_manager
 
 store = CredentialStore()
 session_manager = SessionManager()
@@ -16,6 +18,19 @@ def set_agent_loop(loop):
     """Inject an AgentLoop instance for use by the /api/run endpoint."""
     global _agent_loop
     _agent_loop = loop
+    # Register step callback for WebSocket broadcasting
+    loop.on_step(_on_agent_step)
+
+
+def _on_agent_step(session_id: str, step_number: int, action, result, status: str):
+    """Callback from AgentLoop thread — broadcast step update via WebSocket."""
+    ws_manager.broadcast(session_id, {
+        "type": "step_update",
+        "session_id": session_id,
+        "step_number": step_number,
+        "action": action.model_dump() if action else None,
+        "status": status,
+    })
 
 
 def create_router() -> APIRouter:
@@ -66,8 +81,11 @@ def create_router() -> APIRouter:
         if s is None:
             return {"error": "not found"}
         approved = data.get("approved", False)
-        # In a full implementation, this would signal the waiting agent loop.
-        # For now, record the approval decision.
+        if _agent_loop is not None:
+            if approved:
+                _agent_loop.approve_session(session_id)
+            else:
+                _agent_loop.deny_session(session_id)
         return {"status": "ok", "session_id": session_id, "approved": approved}
 
     @router.post("/run")
@@ -76,6 +94,10 @@ def create_router() -> APIRouter:
         if not goal:
             return {"error": "goal is required"}
         session = session_manager.create(goal)
+        # Run agent loop in background if available
+        if _agent_loop is not None:
+            loop_ref = _agent_loop
+            asyncio.get_running_loop().run_in_executor(None, loop_ref.run, goal)
         return {"session_id": session.id, "id": session.id, "status": session.status.value}
 
     @router.get("/credentials/status")

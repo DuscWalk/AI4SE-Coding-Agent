@@ -2,6 +2,7 @@
 """FastAPI application factory for the Coding Agent Harness."""
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import TYPE_CHECKING
 from fastapi import FastAPI
@@ -9,7 +10,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import RedirectResponse
 from coding_agent.presentation.routes import create_router, set_agent_loop
-from coding_agent.presentation.websocket import websocket_endpoint
+from coding_agent.presentation.websocket import websocket_endpoint, ws_manager
 
 if TYPE_CHECKING:
     from coding_agent.application.agent_loop import AgentLoop
@@ -31,6 +32,10 @@ def create_app(loop: AgentLoop | None = None) -> FastAPI:
         set_agent_loop(loop)
 
     app = FastAPI(title="Coding Agent Harness")
+
+    @app.on_event("startup")
+    async def _set_ws_loop():
+        ws_manager.set_loop(asyncio.get_running_loop())
 
     app.add_middleware(
         CORSMiddleware,

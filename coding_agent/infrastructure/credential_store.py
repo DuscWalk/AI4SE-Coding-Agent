@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 import keyring
 import keyring.errors
 
@@ -18,12 +19,19 @@ class CredentialStore:
 
     def get_api_key(self) -> str | None:
         try:
-            return keyring.get_password(self.SERVICE_NAME, self.API_KEY_ENTRY)
+            key = keyring.get_password(self.SERVICE_NAME, self.API_KEY_ENTRY)
+            if key:
+                return key
         except keyring.errors.KeyringError:
-            return None
+            pass
+        # Fallback to environment variables
+        return os.environ.get("CODING_AGENT_API_KEY") or os.environ.get("OPENAI_API_KEY")
 
     def get_status(self) -> dict:
-        key = self.get_api_key()
+        try:
+            key = keyring.get_password(self.SERVICE_NAME, self.API_KEY_ENTRY)
+        except keyring.errors.KeyringError:
+            key = None
         return {
             "configured": key is not None,
             "masked": "****" if key else None,

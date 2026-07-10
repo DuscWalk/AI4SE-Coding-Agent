@@ -76,7 +76,7 @@ class Governance:
         "git_status": Permission.ALLOWED,
         "git_diff": Permission.ALLOWED,
         "write_file": Permission.NEEDS_CONFIRMATION,
-        "git_commit": Permission.NEEDS_HITL,
+        "git_commit": Permission.NEEDS_CONFIRMATION,
         "run_shell": Permission.NEEDS_HITL,
     }
 

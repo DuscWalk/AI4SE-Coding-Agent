@@ -39,12 +39,12 @@ def test_blocked_command_drop_table():
     assert result.permission == Permission.BLOCKED
 
 
-def test_git_commit_needs_hitl():
-    """git_commit is a RISKY/HITL tool, not directly blocked unless force-push pattern matches."""
+def test_git_commit_needs_confirmation():
+    """git_commit is a RISKY tool, needs user confirmation."""
     gov = Governance()
     action = Action(type=ActionType.CALL_TOOL, tool_name="git_commit", tool_args={"message": "x"})
     result = gov.check(action)
-    assert result.permission == Permission.NEEDS_HITL
+    assert result.permission == Permission.NEEDS_CONFIRMATION
 
 
 def test_blocked_command_format_c():

@@ -2,6 +2,7 @@
 """OpenAI-compatible real LLM provider using the OpenAI SDK."""
 from __future__ import annotations
 import json
+import os
 import openai
 from coding_agent.infrastructure.llm_provider import LLMProvider, LLMResponse, ToolCall
 from coding_agent.domain.models import Message
@@ -24,7 +25,7 @@ class RealLLMProvider(LLMProvider):
     ):
         self._credential_store = credential_store
         self._model_name = model_name
-        self._base_url = base_url
+        self._base_url = base_url or os.environ.get("OPENAI_BASE_URL")
         self._timeout = timeout
 
     def chat(self, messages: list[Message], tools: list[dict]) -> LLMResponse:

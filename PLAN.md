@@ -3610,9 +3610,9 @@ def test_demo_full_pipeline_flow():
         assert "error.py" in result.feedback_text
         assert "syntax" in result.feedback_text.lower()
         # 验证: 有 sensor 报告
-        assert len(result.reports) == 1
-        assert result.reports[0].sensor_name == "syntax"
-        assert result.reports[0].passed is False
+        assert len(result.sensor_reports) == 1
+        assert result.sensor_reports[0].sensor_name == "syntax"
+        assert result.sensor_reports[0].passed is False
 
 
 def test_demo_pipeline_no_errors():

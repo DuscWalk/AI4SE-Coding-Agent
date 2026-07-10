@@ -96,7 +96,7 @@
 | **边界条件** | 记忆检索 top-K 默认 5 条；上下文 token 上限默认 8000 |
 | **错误处理** | 向量检索失败时降级为关键词匹配；压缩失败时截断旧消息 |
 
-**存储层次**：会话内 scratchpad（内存）→ 长期记忆文件（JSON）→ 向量索引（ChromaDB）
+**存储层次**：会话内 scratchpad（内存）→ 长期记忆文件（JSON）→ 向量索引（InMemoryVectorStore，哈希嵌入 + 余弦相似度检索）
 
 ### 3.4 治理护栏（领域层）
 
@@ -204,7 +204,7 @@
 │  Config: 声明式配置加载                               │
 ├─────────────────────────────────────────────────────┤
 │                  基础设施层 (Infrastructure)          │
-│  LLMProvider │ CredentialStore │ VectorStore(ChromaDB)│
+│  LLMProvider │ CredentialStore │ VectorStore(InMemory) │
 │  FileSystem  │ GitOps          │ SubprocessManager   │
 └─────────────────────────────────────────────────────┘
 ```
@@ -252,7 +252,7 @@
 ### 5.4 外部依赖
 
 - **LLM 供应商**：OpenAI 兼容 API（GPT-4o / Claude / DeepSeek 等均可）
-- **ChromaDB**：嵌入式向量数据库，无外部服务依赖
+- **InMemoryVectorStore**：内存向量存储，哈希嵌入 + 余弦相似度，无外部服务依赖
 - **keyring**：跨平台凭据存储库
 - **FastAPI + uvicorn**：Web 服务
 - **pytest / ruff / mypy**：反馈传感器的检测工具（在项目工作区中运行）
@@ -396,7 +396,7 @@ coding-agent serve --port 8080
 | **FastAPI** | Web 框架 | 高性能异步、原生 WebSocket、自动 OpenAPI 文档 |
 | **Pydantic** | 数据模型 | 类型安全、自动校验、与 FastAPI 深度集成 |
 | **keyring** | 凭据存储 | 跨平台、操作系统原生加密 |
-| **ChromaDB** | 向量存储 | 嵌入式运行、Python 原生、无需外部服务 |
+| **InMemoryVectorStore** | 向量存储 | 内存运行、哈希嵌入、Python 原生、无需外部服务 |
 | **OpenAI SDK** | LLM 调用 | 兼容协议最广泛，可接任意供应商 |
 | **pytest** | 测试框架 | Python 生态标准，也是反馈 sensor 的检测工具 |
 | **ruff** | Lint sensor | 极快、Python 原生、替代 flake8 |
@@ -518,13 +518,13 @@ coding-agent serve --port 8080
 | subprocess 执行安全性 | 高 | 治理护栏 + allowed_dirs 限定 + 超时控制 |
 | 上下文窗口溢出 | 中 | 压缩机制 + token 计数 + 步数限制 |
 | 反馈循环死循环 | 中 | max_retries 上限 + ASK_USER 升级策略 |
-| ChromaDB 嵌入模型选择 | 低 | 默认使用轻量 all-MiniLM-L6-v2，可配置 |
+| 嵌入方法选择 | 低 | 默认使用 SHA-256 哈希嵌入，可扩展为其他嵌入方法 |
 | WebSocket 连接不稳定 | 低 | 自动重连 + 降级为轮询 |
 | 真实 LLM 费用 | 低 | mock LLM 开发测试，真实 LLM 仅在演示时使用 |
 
 ### 未决问题
 
-1. **嵌入模型选择**：ChromaDB 默认使用 sentence-transformers 的 all-MiniLM-L6-v2，首次运行需下载。是否需要支持配置其他嵌入模型？
+1. **嵌入方法选择**：当前使用 SHA-256 哈希嵌入 + 余弦相似度检索，适用于中小规模项目。如需语义搜索，可扩展为 sentence-transformers 等语义嵌入模型。
 2. **Windows Credential Manager 的跨平台测试**：开发环境为 Windows，但 Docker 部署在 Linux。keyring 在 Linux 上使用 Secret Service，需验证 Docker 环境中的行为。
 3. **WebUI 前端是否需要框架**：当前设计为原生 HTML/CSS/JS。如果交互复杂度超出预期，是否需要引入轻量框架（如 Alpine.js）？
 4. **多项目会话隔离**：同一用户在不同项目中运行 agent 时，记忆和配置如何隔离？当前设计为按项目目录区分，但需确认细节。

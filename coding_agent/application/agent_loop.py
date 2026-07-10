@@ -2,7 +2,9 @@
 """AgentLoop: main loop orchestrating all harness components."""
 from __future__ import annotations
 
+import threading
 import time
+from collections.abc import Callable
 
 from coding_agent.domain.models import Action, ActionType, AgentResult, Message, StepRecord
 from coding_agent.domain.tool_manager import ToolManager
@@ -23,6 +25,10 @@ class AgentLoop:
       2. Loop: call LLM -> parse action -> governance check -> dispatch tool
          -> run feedback pipeline -> compress context.
       3. Stop on DONE action, max steps exceeded, or unrecoverable error.
+
+    HITL support: when governance returns NEEDS_HITL or NEEDS_CONFIRMATION,
+    the loop blocks on a threading.Event until the WebUI approve/deny endpoint
+    signals it. Timeout is 5 minutes (configurable via HITLState).
     """
 
     LLM_MAX_RETRIES = 3
@@ -38,6 +44,7 @@ class AgentLoop:
         session_manager: SessionManager,
         memory: MemoryManager,
         config: Config,
+        hitl_enabled: bool = False,
     ):
         self.llm = llm
         self.tool_manager = tool_manager
@@ -47,6 +54,58 @@ class AgentLoop:
         self.session_manager = session_manager
         self.memory = memory
         self.config = config
+        self.hitl_enabled = hitl_enabled
+        self._hitl_events: dict[str, threading.Event] = {}
+        self._hitl_approved: dict[str, bool] = {}
+        self._step_callbacks: list[Callable] = []
+
+    def on_step(self, callback: Callable) -> None:
+        """Register a callback invoked after each step.
+
+        The callback receives (session_id, step_number, action, result, status).
+        Called from the agent loop thread — callbacks must be thread-safe.
+        """
+        self._step_callbacks.append(callback)
+
+    def approve_session(self, session_id: str) -> None:
+        """Signal HITL approval for a waiting session."""
+        event = self._hitl_events.get(session_id)
+        if event is not None:
+            self._hitl_approved[session_id] = True
+            event.set()
+
+    def deny_session(self, session_id: str) -> None:
+        """Signal HITL denial for a waiting session."""
+        event = self._hitl_events.get(session_id)
+        if event is not None:
+            self._hitl_approved[session_id] = False
+            event.set()
+
+    def _await_hitl(self, session_id: str, timeout_s: int = 300) -> bool:
+        """Block until HITL is resolved or timeout.
+
+        Returns True if approved, False if denied or timed out.
+        """
+        event = threading.Event()
+        self._hitl_events[session_id] = event
+        self._hitl_approved[session_id] = False
+        try:
+            resolved = event.wait(timeout=timeout_s)
+            if not resolved:
+                return False  # timeout = denied
+            return self._hitl_approved.get(session_id, False)
+        finally:
+            self._hitl_events.pop(session_id, None)
+            self._hitl_approved.pop(session_id, None)
+
+    def _notify_step(self, session_id: str, step_number: int,
+                     action: Action | None, result, status: str) -> None:
+        """Notify all registered step callbacks."""
+        for cb in self._step_callbacks:
+            try:
+                cb(session_id, step_number, action, result, status)
+            except Exception:
+                pass
 
     def _call_llm(self, context: list[Message]) -> LLMProvider.LLMResponse | None:
         """Call LLM with retry and timeout.
@@ -83,6 +142,7 @@ class AgentLoop:
             AgentResult with success flag, answer text, and optional error.
         """
         session = self.session_manager.create(goal)
+        session_id = session.id
         context = self._build_context(goal)
         steps = 0
 
@@ -100,7 +160,8 @@ class AgentLoop:
                     success=False,
                     error="LLM call failed after retries or timed out",
                 )
-                self.session_manager.complete(session.id, result)
+                self.session_manager.complete(session_id, result)
+                self._notify_step(session_id, steps, None, result, "failed")
                 return result
 
             # 2. Parse action from LLM response
@@ -120,7 +181,8 @@ class AgentLoop:
             # 3. Handle DONE action
             if action.type == ActionType.DONE:
                 result = AgentResult(success=True, answer=response.text)
-                self.session_manager.complete(session.id, result)
+                self.session_manager.complete(session_id, result)
+                self._notify_step(session_id, steps, action, result, "done")
                 return result
 
             # 4. Handle TAKE_NOTE action
@@ -136,25 +198,45 @@ class AgentLoop:
                     role="user",
                     content="Action blocked by governance guardrail.",
                 ))
-                step = StepRecord(step_number=steps, action=action)
-                self.session_manager.add_step(session.id, step)
+                step = StepRecord(step_number=steps, action=action,
+                                  governance_result={"permission": "BLOCKED", "reason": permission_result.reason})
+                self.session_manager.add_step(session_id, step)
+                self._notify_step(session_id, steps, action, None, "blocked")
                 continue
 
             if permission_result.permission in (Permission.NEEDS_CONFIRMATION, Permission.NEEDS_HITL):
-                context.append(Message(
-                    role="user",
-                    content=f"Action requires {permission_result.permission.value}. "
-                            "Please approve in the WebUI.",
-                ))
-                step = StepRecord(step_number=steps, action=action)
-                self.session_manager.add_step(session.id, step)
-                continue
+                if not self.hitl_enabled:
+                    # HITL disabled — treat as blocked
+                    context.append(Message(
+                        role="user",
+                        content=f"Action requires approval ({permission_result.permission.value}) but HITL is disabled.",
+                    ))
+                    step = StepRecord(step_number=steps, action=action,
+                                      governance_result={"permission": permission_result.permission.value, "reason": "HITL disabled"})
+                    self.session_manager.add_step(session_id, step)
+                    self._notify_step(session_id, steps, action, None, "blocked")
+                    continue
+                # Notify frontend that HITL is needed
+                self._notify_step(session_id, steps, action, None, "awaiting_approval")
+                # Block until approved, denied, or timed out
+                approved = self._await_hitl(session_id)
+                if not approved:
+                    context.append(Message(
+                        role="user",
+                        content="Action was denied or timed out.",
+                    ))
+                    step = StepRecord(step_number=steps, action=action,
+                                      governance_result={"permission": permission_result.permission.value, "reason": "denied or timed out"})
+                    self.session_manager.add_step(session_id, step)
+                    self._notify_step(session_id, steps, action, None, "denied")
+                    continue
+                # Approved — fall through to dispatch
 
             # 6. Dispatch tool
             result = self.tool_manager.dispatch(action)
             context.append(Message(role="user", content=result.output))
             step = StepRecord(step_number=steps, action=action, action_result=result)
-            self.session_manager.add_step(session.id, step)
+            self.session_manager.add_step(session_id, step)
 
             # 7. Run feedback pipeline on changed files
             if result.changed_files:
@@ -162,9 +244,12 @@ class AgentLoop:
                 if fb_result.feedback_text:
                     context.append(Message(role="user", content=fb_result.feedback_text))
 
+            self._notify_step(session_id, steps, action, result, "completed")
+
         # Max steps exceeded
         result = AgentResult(success=False, error="Max steps reached")
-        self.session_manager.complete(session.id, result)
+        self.session_manager.complete(session_id, result)
+        self._notify_step(session_id, steps, None, result, "max_steps")
         return result
 
     def _build_context(self, goal: str) -> list[Message]:

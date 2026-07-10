@@ -1,11 +1,12 @@
 from __future__ import annotations
+import os
 from pathlib import Path
 import yaml
 from coding_agent.domain.models import ConfigData
 
 
 class Config(ConfigData):
-    """声明式配置，从 YAML 和 Markdown 规则文件加载"""
+    """声明式配置，从 YAML、Markdown 规则文件和环境变量加载"""
 
     project_rules: str = ""
 
@@ -31,5 +32,20 @@ class Config(ConfigData):
         if agents_path.exists():
             with open(agents_path, "r", encoding="utf-8") as f:
                 config.project_rules += "\n" + f.read()
+
+        # Environment variable overrides (highest priority)
+        env_overrides = {
+            "max_steps": "CODING_AGENT_MAX_STEPS",
+            "max_context_tokens": "CODING_AGENT_MAX_CONTEXT_TOKENS",
+            "max_retries": "CODING_AGENT_MAX_RETRIES",
+            "model_name": "CODING_AGENT_MODEL",
+        }
+        for attr, env_var in env_overrides.items():
+            val = os.environ.get(env_var)
+            if val is not None:
+                try:
+                    setattr(config, attr, type(getattr(config, attr))(val))
+                except (ValueError, TypeError):
+                    pass
 
         return config
