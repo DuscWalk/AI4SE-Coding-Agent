@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 from coding_agent.presentation.routes import create_router, set_agent_loop
 from coding_agent.presentation.websocket import websocket_endpoint
 
@@ -40,6 +41,10 @@ def create_app(loop: AgentLoop | None = None) -> FastAPI:
 
     app.include_router(create_router())
     app.add_api_websocket_route("/ws/{session_id}", websocket_endpoint)
+
+    @app.get("/")
+    async def root():
+        return RedirectResponse(url="/static/index.html")
 
     static_dir = Path(__file__).parent / "static"
     if static_dir.exists():
