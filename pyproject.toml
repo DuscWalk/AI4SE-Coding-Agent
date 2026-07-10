@@ -25,3 +25,6 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.8.0",
 ]
+
+[project.scripts]
+coding-agent = "coding_agent.main:main"
