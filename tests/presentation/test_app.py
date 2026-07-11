@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import pytest
+import time
 from fastapi.testclient import TestClient
 from coding_agent.presentation.app import create_app
+from coding_agent.application.session_manager import SessionManager
+from coding_agent.domain.models import AgentResult
 
 
 @pytest.fixture
@@ -128,3 +131,38 @@ def test_approve_nonexistent_session(client):
     )
     assert response.status_code == 200
     assert "error" in response.json()
+
+
+def test_run_endpoint_uses_agent_loop_session_manager(tmp_path) -> None:
+    class FakeLoop:
+        def __init__(self) -> None:
+            self.session_manager = SessionManager(str(tmp_path / "sessions"))
+            self.calls: list[tuple[str, str | None]] = []
+
+        def on_step(self, _callback) -> None:
+            return None
+
+        def run(self, goal: str, session_id: str | None = None) -> AgentResult:
+            self.calls.append((goal, session_id))
+            result = AgentResult(success=True, answer="done")
+            assert session_id is not None
+            self.session_manager.complete(session_id, result)
+            return result
+
+        def approve_session(self, _session_id: str) -> None:
+            return None
+
+        def deny_session(self, _session_id: str) -> None:
+            return None
+
+    loop = FakeLoop()
+    with TestClient(create_app(loop=loop)) as app_client:
+        response = app_client.post("/api/run", json={"goal": "integrated task"})
+        session_id = response.json()["session_id"]
+        for _ in range(50):
+            if loop.calls:
+                break
+            time.sleep(0.01)
+
+    assert loop.calls == [("integrated task", session_id)]
+    assert loop.session_manager.get(session_id) is not None

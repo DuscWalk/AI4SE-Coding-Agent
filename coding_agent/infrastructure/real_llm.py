@@ -3,8 +3,14 @@
 from __future__ import annotations
 import json
 import os
+from typing import Any
 import openai
-from coding_agent.infrastructure.llm_provider import LLMProvider, LLMResponse, ToolCall
+from coding_agent.infrastructure.llm_provider import (
+    LLMProvider,
+    LLMResponse,
+    ToolCall,
+    ToolDefinition,
+)
 from coding_agent.domain.models import Message
 from coding_agent.infrastructure.credential_store import CredentialStore
 
@@ -28,20 +34,20 @@ class RealLLMProvider(LLMProvider):
         self._base_url = base_url or os.environ.get("OPENAI_BASE_URL")
         self._timeout = timeout
 
-    def chat(self, messages: list[Message], tools: list[dict]) -> LLMResponse:
+    def chat(self, messages: list[Message], tools: list[ToolDefinition]) -> LLMResponse:
         api_key = self._credential_store.get_api_key()
         if not api_key:
             return LLMResponse(
                 text="Error: No API key configured. Please set your API key first."
             )
 
-        client_kwargs: dict = {"api_key": api_key, "timeout": self._timeout}
+        client_kwargs: dict[str, Any] = {"api_key": api_key, "timeout": self._timeout}
         if self._base_url:
             client_kwargs["base_url"] = self._base_url
 
         client = openai.OpenAI(**client_kwargs)
 
-        openai_messages: list[dict] = []
+        openai_messages: list[dict[str, Any]] = []
         for m in messages:
             role = m.role
             if role == "system":
@@ -52,7 +58,7 @@ class RealLLMProvider(LLMProvider):
                 openai_role = "user"
             openai_messages.append({"role": openai_role, "content": m.content})
 
-        openai_tools: list[dict] = []
+        openai_tools: list[dict[str, Any]] = []
         for t in tools:
             openai_tools.append({
                 "type": "function",
@@ -63,7 +69,7 @@ class RealLLMProvider(LLMProvider):
                 },
             })
 
-        kwargs: dict = {
+        kwargs: dict[str, Any] = {
             "model": self._model_name,
             "messages": openai_messages,
         }

@@ -1,9 +1,9 @@
 # tests/infrastructure/test_llm_provider.py
 import pytest
 from coding_agent.infrastructure.llm_provider import (
-    LLMProvider, ScriptedMockLLM, RuleBasedMockLLM, LLMResponse, ToolCall
+    ScriptedMockLLM, RuleBasedMockLLM, LLMResponse, ToolCall
 )
-from coding_agent.domain.models import Message, ActionType
+from coding_agent.domain.models import Message
 
 
 def test_scripted_mock_returns_preset_responses():

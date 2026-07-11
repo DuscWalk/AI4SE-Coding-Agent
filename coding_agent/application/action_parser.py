@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 import re
+from typing import Any
 from coding_agent.domain.models import Action, ActionType
 from coding_agent.infrastructure.llm_provider import LLMResponse
 
@@ -40,7 +41,7 @@ class ActionParser:
         return None
 
     @staticmethod
-    def _from_dict(data: dict) -> Action:
+    def _from_dict(data: dict[str, Any]) -> Action:
         action_type = ActionType.CALL_TOOL
         type_str = data.get("type", data.get("action", ""))
         if type_str in ("done", "DONE"):

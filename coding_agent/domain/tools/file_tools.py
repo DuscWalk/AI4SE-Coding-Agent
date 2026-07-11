@@ -1,17 +1,17 @@
 # coding_agent/domain/tools/file_tools.py
 from coding_agent.infrastructure.file_system import FileSystemManager
-from coding_agent.domain.tool_manager import ToolDef, ToolPermission
+from coding_agent.domain.tool_manager import ToolArgs, ToolDef, ToolManager, ToolPermission
 
 
-def register_file_tools(tm, fs: FileSystemManager):
-    def read_file(args):
+def register_file_tools(tm: ToolManager, fs: FileSystemManager) -> None:
+    def read_file(args: ToolArgs) -> str:
         return fs.read_file(args["path"])
 
-    def write_file(args):
+    def write_file(args: ToolArgs) -> str:
         fs.write_file(args["path"], args["content"])
         return f"Written: {args['path']}"
 
-    def list_dir(args):
+    def list_dir(args: ToolArgs) -> str:
         items = fs.list_dir(args["path"])
         return "\n".join(items)
 

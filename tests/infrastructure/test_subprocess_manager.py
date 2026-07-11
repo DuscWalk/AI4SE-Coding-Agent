@@ -1,5 +1,4 @@
 import sys
-import pytest
 from coding_agent.infrastructure.subprocess_manager import SubprocessManager
 
 

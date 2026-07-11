@@ -1,5 +1,4 @@
 # tests/domain/test_memory.py
-import pytest
 from coding_agent.domain.memory import MemoryManager
 from coding_agent.infrastructure.vector_store import InMemoryVectorStore
 

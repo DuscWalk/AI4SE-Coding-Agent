@@ -2,19 +2,19 @@
 import glob
 import re
 from pathlib import Path
-from coding_agent.domain.tool_manager import ToolDef, ToolPermission
+from coding_agent.domain.tool_manager import ToolArgs, ToolDef, ToolManager, ToolPermission
 
 
-def register_search_tools(tm):
-    def search_files(args):
+def register_search_tools(tm: ToolManager) -> None:
+    def search_files(args: ToolArgs) -> str:
         pattern = args.get("pattern", "**/*")
         matches = glob.glob(pattern, recursive=True)
         return "\n".join(matches[:50])
 
-    def grep(args):
+    def grep(args: ToolArgs) -> str:
         pattern = args["pattern"]
         path = args.get("path", ".")
-        results = []
+        results: list[str] = []
         for f in Path(path).rglob("*.py"):
             try:
                 for i, line in enumerate(f.read_text(encoding="utf-8").splitlines(), 1):

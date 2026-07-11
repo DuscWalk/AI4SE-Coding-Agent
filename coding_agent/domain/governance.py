@@ -14,7 +14,7 @@ class Permission(str, Enum):
 
 
 class PermissionResult:
-    def __init__(self, permission: Permission, reason: str = ""):
+    def __init__(self, permission: Permission, reason: str = "") -> None:
         self.permission = permission
         self.reason = reason
 
@@ -22,7 +22,7 @@ class PermissionResult:
 class HITLState:
     HITL_TIMEOUT_S = 300  # 5 minutes
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._pending = False
         self._request_message = ""
         self._resolved = False
@@ -93,7 +93,7 @@ class Governance:
         r"dd\s+if=",
     ]
 
-    def __init__(self, blocked_patterns: list[str] | None = None):
+    def __init__(self, blocked_patterns: list[str] | None = None) -> None:
         self._blocked = blocked_patterns or self.BLOCKED_PATTERNS
         self._tool_permissions: dict[str, Permission] = dict(self.TOOL_PERMISSIONS)
 

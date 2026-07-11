@@ -6,7 +6,14 @@ import threading
 import time
 from collections.abc import Callable
 
-from coding_agent.domain.models import Action, ActionType, AgentResult, Message, StepRecord
+from coding_agent.domain.models import (
+    Action,
+    ActionResult,
+    ActionType,
+    AgentResult,
+    Message,
+    StepRecord,
+)
 from coding_agent.domain.tool_manager import ToolManager
 from coding_agent.domain.governance import Governance, Permission
 from coding_agent.domain.feedback.pipeline import FeedbackPipeline
@@ -14,7 +21,10 @@ from coding_agent.application.action_parser import ActionParser
 from coding_agent.application.session_manager import SessionManager
 from coding_agent.domain.memory import MemoryManager
 from coding_agent.domain.config import Config
-from coding_agent.infrastructure.llm_provider import LLMProvider
+from coding_agent.infrastructure.llm_provider import LLMProvider, LLMResponse
+
+
+StepCallback = Callable[[str, int, Action | None, object | None, str], None]
 
 
 class AgentLoop:
@@ -57,9 +67,9 @@ class AgentLoop:
         self.hitl_enabled = hitl_enabled
         self._hitl_events: dict[str, threading.Event] = {}
         self._hitl_approved: dict[str, bool] = {}
-        self._step_callbacks: list[Callable] = []
+        self._step_callbacks: list[StepCallback] = []
 
-    def on_step(self, callback: Callable) -> None:
+    def on_step(self, callback: StepCallback) -> None:
         """Register a callback invoked after each step.
 
         The callback receives (session_id, step_number, action, result, status).
@@ -98,8 +108,14 @@ class AgentLoop:
             self._hitl_events.pop(session_id, None)
             self._hitl_approved.pop(session_id, None)
 
-    def _notify_step(self, session_id: str, step_number: int,
-                     action: Action | None, result, status: str) -> None:
+    def _notify_step(
+        self,
+        session_id: str,
+        step_number: int,
+        action: Action | None,
+        result: ActionResult | AgentResult | None,
+        status: str,
+    ) -> None:
         """Notify all registered step callbacks."""
         for cb in self._step_callbacks:
             try:
@@ -107,7 +123,7 @@ class AgentLoop:
             except Exception:
                 pass
 
-    def _call_llm(self, context: list[Message]) -> LLMProvider.LLMResponse | None:
+    def _call_llm(self, context: list[Message]) -> LLMResponse | None:
         """Call LLM with retry and timeout.
 
         Retries up to LLM_MAX_RETRIES on failure.
@@ -132,7 +148,7 @@ class AgentLoop:
 
         return None
 
-    def run(self, goal: str) -> AgentResult:
+    def run(self, goal: str, session_id: str | None = None) -> AgentResult:
         """Execute the agent loop for a given goal.
 
         Args:
@@ -141,8 +157,10 @@ class AgentLoop:
         Returns:
             AgentResult with success flag, answer text, and optional error.
         """
-        session = self.session_manager.create(goal)
-        session_id = session.id
+        if session_id is None:
+            session_id = self.session_manager.create(goal).id
+        elif self.session_manager.get(session_id) is None:
+            raise ValueError(f"Unknown session: {session_id}")
         context = self._build_context(goal)
         steps = 0
 
@@ -233,24 +251,24 @@ class AgentLoop:
                 # Approved — fall through to dispatch
 
             # 6. Dispatch tool
-            result = self.tool_manager.dispatch(action)
-            context.append(Message(role="user", content=result.output))
-            step = StepRecord(step_number=steps, action=action, action_result=result)
+            tool_result = self.tool_manager.dispatch(action)
+            context.append(Message(role="user", content=tool_result.output))
+            step = StepRecord(step_number=steps, action=action, action_result=tool_result)
             self.session_manager.add_step(session_id, step)
 
             # 7. Run feedback pipeline on changed files
-            if result.changed_files:
-                fb_result = self.feedback_pipeline.run(result.changed_files)
+            if tool_result.changed_files:
+                fb_result = self.feedback_pipeline.run(tool_result.changed_files)
                 if fb_result.feedback_text:
                     context.append(Message(role="user", content=fb_result.feedback_text))
 
-            self._notify_step(session_id, steps, action, result, "completed")
+            self._notify_step(session_id, steps, action, tool_result, "completed")
 
         # Max steps exceeded
-        result = AgentResult(success=False, error="Max steps reached")
-        self.session_manager.complete(session_id, result)
-        self._notify_step(session_id, steps, None, result, "max_steps")
-        return result
+        agent_result = AgentResult(success=False, error="Max steps reached")
+        self.session_manager.complete(session_id, agent_result)
+        self._notify_step(session_id, steps, None, agent_result, "max_steps")
+        return agent_result
 
     def _build_context(self, goal: str) -> list[Message]:
         """Build the initial message context for the LLM."""

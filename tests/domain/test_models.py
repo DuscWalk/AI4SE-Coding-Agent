@@ -1,4 +1,3 @@
-import pytest
 from coding_agent.domain.models import (
     Action, ActionType, ActionResult, Message, SensorReport,
     SensorFailure, FailureCategory, FailureSeverity, MemoryEntry

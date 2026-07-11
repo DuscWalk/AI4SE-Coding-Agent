@@ -8,7 +8,7 @@ class FileSystemManager:
 
     def _check_path(self, path: str) -> Path:
         resolved = Path(path).resolve()
-        if not any(str(resolved).startswith(str(d)) for d in self._allowed):
+        if not any(resolved.is_relative_to(allowed) for allowed in self._allowed):
             raise PermissionError(f"Access denied: {path} is outside allowed directories")
         return resolved
 

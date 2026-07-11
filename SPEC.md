@@ -154,14 +154,14 @@
 **威胁模型**：
 | 威胁 | 风险等级 | 对策 |
 |------|----------|------|
-| API key 泄露到 Git | 高 | `.gitignore` 排除 `.env`、`credentials`、日志；pre-commit hook 扫描 |
+| API key 泄露到 Git | 高 | `.gitignore` 排除 `.env`、`credentials`、secret 文件与日志；提交前执行凭据扫描 |
 | API key 泄露到日志 | 高 | 日志系统自动脱敏，替换 key 为 `****` |
 | API key 在进程列表中可见 | 中 | 不通过命令行传 key，通过 Credential Manager 或安全输入 |
 | 恶意 prompt 注入 | 中 | 危险命令模式匹配 + 权限分级，不依赖 LLM 自我约束 |
 | `.env` 明文存储 | 中 | 支持 `.env` 作为输入源，但 README 说明风险，推荐 Credential Manager |
 | 未授权文件访问 | 中 | `allowed_dirs` 配置限定工作目录范围 |
 
-**凭据安全存储**：Windows Credential Manager（`keyring` 库），不落地明文文件。
+**凭据安全存储**：本机使用操作系统凭据管理器（`keyring` 库）；Docker 使用只读 secret 文件挂载，并通过 `CODING_AGENT_API_KEY_FILE` 指定路径。key 不写入镜像、项目配置或日志。
 
 **凭据生命周期**：
 - 录入：`coding-agent credentials set`（隐藏输入）
@@ -350,7 +350,7 @@ Config
 **首选**：Windows Credential Manager（通过 `keyring` 库）
 - 加密存储，由操作系统管理
 - 不落地明文文件
-- 跨平台兼容（macOS Keychain / Linux Secret Service）
+- 跨平台兼容（macOS Keychain / Linux Secret Service）；不使用明文 fallback keyring
 
 **备选**：`.env` 文件
 - 明文存储，风险高

@@ -28,3 +28,4 @@ def test_write_file_tool():
         result = tm.dispatch(action)
         assert result.success is True
         assert f.read_text(encoding="utf-8") == "data"
+        assert result.changed_files == [str(f)]

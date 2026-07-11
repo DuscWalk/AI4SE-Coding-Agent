@@ -1,6 +1,5 @@
 # tests/domain/test_governance.py
-import pytest
-from coding_agent.domain.governance import Governance, PermissionResult, Permission, HITLState
+from coding_agent.domain.governance import Governance, Permission, HITLState
 from coding_agent.domain.models import Action, ActionType
 
 

@@ -467,3 +467,21 @@
 7. **Open Design 不是 CSS 框架**：需要 clone 实际仓库、阅读设计系统源码、使用真实令牌
 8. **服务器部署需要提前规划**：Python 版本、keyring 后端、安全组规则都是潜在阻塞点
 9. **多轮审计是质量保障**：第二次审计发现 17 个问题，其中 3 个 CRITICAL 级别（真实 LLM provider 缺失、LLM 重试/超时未实现、HITL 超时未实现），这些问题在第一次审计中被遗漏
+## Phase 7: 作业合规修复与终验（2026-07-11）
+
+### 记录 7.1 · 独立 worktree 修复
+
+- **工具**：OpenAI Codex CLI + Superpowers
+- **分支**：`fix/assignment-compliance`，worktree 为 `.worktrees/assignment-compliance-fix`
+- **问题**：真实组合根遗漏 `FileSystemManager` / `SubprocessManager` 注入，导致 `coding-agent serve` 与 `run` 初始化失败；ruff 与 mypy strict 未通过
+- **TDD**：先新增 `_create_agent_loop()` 回归测试并观察 `TypeError`，再补依赖注入使测试转绿
+- **修复**：补齐 strict 类型契约、WebUI session 复用、`write_file` 变更文件回灌、`allowed_dirs` 前缀逃逸、FastAPI lifespan、wheel 静态资源、容器 secret 文件凭据来源
+
+### 记录 7.2 · 最终质量门禁
+
+- **ruff**：`ruff check coding_agent/ tests/` 通过
+- **mypy**：`mypy coding_agent/` strict 模式通过，34 个源文件零错误
+- **测试**：115/115 passed，并以 `DeprecationWarning` 作为 error 验证输出干净
+- **分发**：sdist/wheel 构建成功；在独立 venv 安装 wheel 后 `coding-agent --help` 可运行，WebUI 静态资源存在于 site-packages
+- **Docker**：CI 已配置镜像构建；本机未安装 Docker CLI，需以最终远端 CI 成功记录作为提交证据
+- **人工判断**：没有把“单测通过”当成真实入口可用的替代证据，增加组合根、WebUI session 和分发烟测

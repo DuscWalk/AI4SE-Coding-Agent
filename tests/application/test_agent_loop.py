@@ -52,6 +52,20 @@ def test_agent_completes_with_done():
         assert result.answer == "all done"
 
 
+def test_agent_run_reuses_existing_session() -> None:
+    responses = [LLMResponse(text="done", tool_calls=[])]
+    with tempfile.TemporaryDirectory() as td:
+        loop = make_harness(responses, td)
+        session = loop.session_manager.create("existing task")
+
+        result = loop.run("existing task", session_id=session.id)
+
+        sessions = loop.session_manager.list_all()
+        assert len(sessions) == 1
+        assert sessions[0].id == session.id
+        assert sessions[0].result == result
+
+
 def test_agent_stops_at_max_steps():
     """Agent should return failure when max_steps is exceeded."""
     config = Config(max_steps=2)

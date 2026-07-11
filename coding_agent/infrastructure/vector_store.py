@@ -26,7 +26,7 @@ class VectorStore(ABC):
 
 
 class InMemoryVectorStore(VectorStore):
-    def __init__(self):
+    def __init__(self) -> None:
         self._entries: list[tuple[MemoryEntry, list[float]]] = []
 
     def _cosine_similarity(self, a: list[float], b: list[float]) -> float:

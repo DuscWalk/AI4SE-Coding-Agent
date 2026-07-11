@@ -1,4 +1,4 @@
-.PHONY: test test-demo test-all lint typecheck clean
+.PHONY: test test-demo test-all lint typecheck check clean
 
 test:
 	pytest tests/ -v --tb=short --ignore=tests/demonstrations
@@ -10,10 +10,12 @@ test-all:
 	pytest tests/ -v --tb=short
 
 lint:
-	ruff check coding_agent/
+	ruff check coding_agent/ tests/
 
 typecheck:
-	mypy coding_agent/ --ignore-missing-imports
+	mypy coding_agent/ --strict --ignore-missing-imports
+
+check: lint typecheck test-all
 
 clean:
 	python -c "import pathlib, shutil; [shutil.rmtree(p) for p in pathlib.Path('.').rglob('__pycache__')]"

@@ -29,5 +29,11 @@ jobs:
       - name: Run tests
         run: pytest tests/ -v --tb=short
 
+      - name: Run lint
+        run: ruff check coding_agent/ tests/
+
+      - name: Run type checks
+        run: mypy coding_agent/
+
       - name: Build Docker image
         run: docker build -t coding-agent .

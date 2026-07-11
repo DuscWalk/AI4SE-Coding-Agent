@@ -3,7 +3,6 @@ import py_compile
 import subprocess
 import time
 from abc import ABC, abstractmethod
-from pathlib import Path
 from coding_agent.domain.models import (
     SensorReport, SensorFailure, FailureCategory, FailureSeverity
 )

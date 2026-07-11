@@ -1,5 +1,4 @@
 # tests/domain/test_tool_manager.py
-import pytest
 from coding_agent.domain.tool_manager import ToolManager, ToolDef, ToolPermission
 from coding_agent.domain.models import Action, ActionType
 

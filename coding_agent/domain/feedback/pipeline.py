@@ -2,7 +2,7 @@
 from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from coding_agent.domain.feedback.sensors import Sensor, SyntaxSensor, TypeCheckSensor, LintSensor, TestSensor
+from coding_agent.domain.feedback.sensors import Sensor
 from coding_agent.domain.feedback.classifier import FailureClassifier, ClassifiedResult
 from coding_agent.domain.feedback.engine import CorrectionEngine, CorrectionStrategy
 from coding_agent.domain.models import SensorReport, SensorFailure, FailureSeverity, FailureCategory

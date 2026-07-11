@@ -27,6 +27,16 @@ def test_write_file_outside_allowed_dirs_raises():
         mgr.write_file("/etc/passwd", "evil")
 
 
+def test_write_file_rejects_sibling_with_allowed_prefix(tmp_path: Path) -> None:
+    allowed = tmp_path / "project"
+    sibling = tmp_path / "project-copy" / "escape.txt"
+    allowed.mkdir()
+    mgr = FileSystemManager(allowed_dirs=[str(allowed)])
+
+    with pytest.raises(PermissionError):
+        mgr.write_file(str(sibling), "evil")
+
+
 def test_list_dir():
     with tempfile.TemporaryDirectory() as td:
         (Path(td) / "a.py").touch()

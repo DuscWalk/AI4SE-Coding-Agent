@@ -13,12 +13,20 @@ class MemoryManager:
 
     def read(self, goal: str) -> list[MemoryEntry]:
         embedding = self._simple_embed(goal)
-        entries = self.vector_store.search(goal, embedding, top_k=5)
+        stored_entries = self.vector_store.search(goal, embedding, top_k=5)
+        entries = [
+            MemoryEntry(
+                content=entry.content,
+                embedding=entry.embedding,
+                type=MemoryType.LONG_TERM,
+            )
+            for entry in stored_entries
+        ]
         # Also include matching scratchpad notes
         for note in self.session_notes:
             if goal.lower() in note.content.lower():
                 entries.append(note)
-        return entries  # type: ignore[return-value]
+        return entries
 
     def write(self, note: str) -> None:
         entry = MemoryEntry(

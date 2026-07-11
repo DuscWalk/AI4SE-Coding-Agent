@@ -2,9 +2,10 @@ import argparse
 import sys
 from pathlib import Path
 from getpass import getpass
+from coding_agent.application.agent_loop import AgentLoop
 
 
-def _create_agent_loop(hitl_enabled: bool = False):
+def _create_agent_loop(hitl_enabled: bool = False) -> AgentLoop:
     """Create a fully wired AgentLoop with all components."""
     from coding_agent.domain.config import Config
     from coding_agent.domain.tool_manager import ToolManager
@@ -20,6 +21,8 @@ def _create_agent_loop(hitl_enabled: bool = False):
     from coding_agent.infrastructure.credential_store import CredentialStore
     from coding_agent.infrastructure.real_llm import RealLLMProvider
     from coding_agent.infrastructure.vector_store import InMemoryVectorStore
+    from coding_agent.infrastructure.file_system import FileSystemManager
+    from coding_agent.infrastructure.subprocess_manager import SubprocessManager
     from coding_agent.domain.tools.file_tools import register_file_tools
     from coding_agent.domain.tools.search_tools import register_search_tools
     from coding_agent.domain.tools.git_tools import register_git_tools
@@ -31,11 +34,13 @@ def _create_agent_loop(hitl_enabled: bool = False):
     llm = RealLLMProvider(credential_store, model_name=config.model_name)
 
     tool_manager = ToolManager()
-    register_file_tools(tool_manager)
+    file_system = FileSystemManager(config.allowed_dirs)
+    subprocess_manager = SubprocessManager()
+    register_file_tools(tool_manager, file_system)
     register_search_tools(tool_manager)
-    register_git_tools(tool_manager)
-    register_shell_tool(tool_manager)
-    register_test_tool(tool_manager)
+    register_git_tools(tool_manager, subprocess_manager)
+    register_shell_tool(tool_manager, subprocess_manager)
+    register_test_tool(tool_manager, subprocess_manager)
 
     governance = Governance(blocked_patterns=config.blocked_patterns if config.blocked_patterns else None)
     governance.set_tool_permissions({
@@ -67,7 +72,7 @@ def _create_agent_loop(hitl_enabled: bool = False):
     )
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(prog="coding-agent", description="Coding Agent Harness")
     sub = parser.add_subparsers(dest="command")
 

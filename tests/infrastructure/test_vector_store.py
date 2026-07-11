@@ -1,6 +1,5 @@
 # tests/infrastructure/test_vector_store.py
-import pytest
-from coding_agent.infrastructure.vector_store import InMemoryVectorStore, MemoryEntry as VSEntry
+from coding_agent.infrastructure.vector_store import InMemoryVectorStore
 
 
 def test_insert_and_search():

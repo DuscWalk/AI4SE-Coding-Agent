@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-import json
+from typing import Any
 from fastapi import WebSocket
 
 
@@ -14,7 +14,7 @@ class WebSocketManager:
     to the event loop via run_coroutine_threadsafe.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self._connections: dict[str, list[WebSocket]] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
 
@@ -33,7 +33,7 @@ class WebSocketManager:
         if not conns:
             self._connections.pop(session_id, None)
 
-    def broadcast(self, session_id: str, data: dict) -> None:
+    def broadcast(self, session_id: str, data: dict[str, Any]) -> None:
         """Thread-safe broadcast to all connections for a session."""
         conns = list(self._connections.get(session_id, []))
         if not conns or self._loop is None:
@@ -46,7 +46,7 @@ class WebSocketManager:
             except Exception:
                 pass
 
-    async def _handle_connection(self, websocket: WebSocket, session_id: str):
+    async def _handle_connection(self, websocket: WebSocket, session_id: str) -> None:
         try:
             while True:
                 # Keep connection alive, receive pings
@@ -70,7 +70,7 @@ class WebSocketManager:
 ws_manager = WebSocketManager()
 
 
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket) -> None:
     """Accept WebSocket connections and stream agent step updates.
 
     The client connects with a session_id path parameter.

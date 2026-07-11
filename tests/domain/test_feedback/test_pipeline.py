@@ -2,7 +2,7 @@
 from __future__ import annotations
 import tempfile
 from pathlib import Path
-from coding_agent.domain.feedback.pipeline import FeedbackPipeline, PipelineResult
+from coding_agent.domain.feedback.pipeline import FeedbackPipeline
 from coding_agent.domain.feedback.sensors import SyntaxSensor
 from coding_agent.domain.feedback.classifier import FailureClassifier
 from coding_agent.domain.feedback.engine import CorrectionEngine, CorrectionStrategy

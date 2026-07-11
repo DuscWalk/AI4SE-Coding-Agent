@@ -15,7 +15,7 @@ class ActionType(str, Enum):
 class Action(BaseModel):
     type: ActionType
     tool_name: str | None = None
-    tool_args: dict | None = None
+    tool_args: dict[str, Any] | None = None
     thought: str = ""
     note: str | None = None
 

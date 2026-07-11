@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
 from fastapi import FastAPI
@@ -31,11 +33,12 @@ def create_app(loop: AgentLoop | None = None) -> FastAPI:
     if loop is not None:
         set_agent_loop(loop)
 
-    app = FastAPI(title="Coding Agent Harness")
-
-    @app.on_event("startup")
-    async def _set_ws_loop():
+    @asynccontextmanager
+    async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         ws_manager.set_loop(asyncio.get_running_loop())
+        yield
+
+    app = FastAPI(title="Coding Agent Harness", lifespan=lifespan)
 
     app.add_middleware(
         CORSMiddleware,
@@ -48,7 +51,7 @@ def create_app(loop: AgentLoop | None = None) -> FastAPI:
     app.add_api_websocket_route("/ws/{session_id}", websocket_endpoint)
 
     @app.get("/")
-    async def root():
+    async def root() -> RedirectResponse:
         return RedirectResponse(url="/static/index.html")
 
     static_dir = Path(__file__).parent / "static"
