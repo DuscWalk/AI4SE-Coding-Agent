@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import keyring
 import keyring.errors
-from typing import TypedDict
+from typing_extensions import TypedDict
 
 
 class CredentialStatus(TypedDict):
